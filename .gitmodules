@@ -1,0 +1,3 @@
+[submodule "Code/Python/pytrigno"]
+	path = Code/Python/pytrigno
+	url = https://github.com/axopy/pytrigno
