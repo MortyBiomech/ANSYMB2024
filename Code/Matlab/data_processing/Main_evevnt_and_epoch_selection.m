@@ -62,6 +62,9 @@ EMG_sensor_id = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 
 %% Split dataset based on events
+% Note:
+%      Epoch selection was performed on subject 7 and datasets are stored.
+
 Main_epoch_selection(output, EEG, Trials_Info, EMG_sensor_id, ...
     subject_id, data_path)
 
