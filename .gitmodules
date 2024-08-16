@@ -1,3 +1,6 @@
 [submodule "Code/Python/pytrigno"]
 	path = Code/Python/pytrigno
 	url = https://github.com/axopy/pytrigno
+[submodule "Code/Matlab/data_processing/BeMoBIL_Pipeline"]
+	path = Code/Matlab/data_processing/BeMoBIL_Pipeline
+	url = https://github.com/BeMoBIL/bemobil-pipeline
