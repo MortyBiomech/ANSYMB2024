@@ -8,7 +8,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
     %% EEG_trials - Time-Domain: Sources
     % making 3d matrix for each pressure condiotion
     % P1
-    numSources = size(data{1, P1.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 1);
+    numChannels = size(data{1, P1.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 1);
     numPointsP1 = size(data{1, P1.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 2);
     num_of_epochs = zeros(1, length(P1.trials));
     for i = 1:length(P1.trials)
@@ -17,7 +17,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
     end
     numEpochsP1 = sum(num_of_epochs);
     
-    signal_P1_3d = zeros(numSources, numPointsP1, sum(num_of_epochs));
+    signal_P1_3d = zeros(numChannels, numPointsP1, sum(num_of_epochs));
     M = cumsum(num_of_epochs);
     tempdata = data{1, P1.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized;
     signal_P1_3d(:,:, 1:num_of_epochs(1)) = tempdata;
@@ -28,7 +28,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
 
     
     % P3
-    numSources = size(data{1, P3.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 1);
+    numChannels = size(data{1, P3.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 1);
     numPointsP3 = size(data{1, P3.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 2);
     num_of_epochs = zeros(1, length(P3.trials));
     for i = 1:length(P3.trials)
@@ -37,7 +37,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
     end
     numEpochsP3 = sum(num_of_epochs);
     
-    signal_P3_3d = zeros(numSources, numPointsP3, sum(num_of_epochs));
+    signal_P3_3d = zeros(numChannels, numPointsP3, sum(num_of_epochs));
     M = cumsum(num_of_epochs);
     tempdata = data{1, P3.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized;
     signal_P3_3d(:,:, 1:num_of_epochs(1)) = tempdata;
@@ -48,7 +48,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
     
 
     % P6
-    numSources = size(data{1, P6.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 1);
+    numChannels = size(data{1, P6.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 1);
     numPointsP6 = size(data{1, P6.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized, 2);
     num_of_epochs = zeros(1, length(P6.trials));
     for i = 1:length(P6.trials)
@@ -57,7 +57,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
     end
     numEpochsP6 = sum(num_of_epochs);
     
-    signal_P6_3d = zeros(numSources, numPointsP6, sum(num_of_epochs));
+    signal_P6_3d = zeros(numChannels, numPointsP6, sum(num_of_epochs));
     M = cumsum(num_of_epochs);
     tempdata = data{1, P6.trials(1)}.EEG_stream.Preprocessed.Time_Domain.Sources.Length_Normalized;
     signal_P6_3d(:,:, 1:num_of_epochs(1)) = tempdata;
@@ -107,7 +107,7 @@ function EEG_extension_epochs_Time_Domain_sources(data, std_sem, P1, P3, P6)
     sgtitle(sprintf('Time-Domain (Extension, Mean $\\pm$ %s): %d epochs P1, %d epochs P3, %d epochs P6', ...
         std_sem, numEpochsP1, numEpochsP3, numEpochsP6), 'Interpreter', 'latex');
     
-    for i = 1:numSources
+    for i = 1:numChannels
         nexttile; hold on
     
         % fill([XP1 fliplr(XP1)], [mean_signalP1(i, :) + std_signalP1(i, :), ...

@@ -132,11 +132,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG entire trials - Time Domain - Channels'
                 disp(['EEG entire trials - Time Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Trial_based;
-                EEG_entire_trials_Time_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Entire Trial', 'Channels');
             case 'EEG entire trials - Time Domain - ICs'
                 disp(['EEG entire trials - Time Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_Trial_based;
-                EEG_entire_trials_Time_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Entire Trial', 'Sources');
             case 'EEG entire trials - Frequency Domain - Channels'
                 disp(['EEG entire trials - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epoches_Trial_based;
@@ -150,11 +150,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG flexion epochs - Time Domain - Channels'
                 disp(['EEG flexion epochs - Time Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Flexion_based;
-                EEG_flexion_epochs_Time_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Flexion', 'Channels');
             case 'EEG flexion epochs - Time Domain - ICs'
                 disp(['EEG flexion epochs - Time Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_Flexion_based;
-                EEG_flexion_epochs_Time_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Flexion', 'Sources');
             case 'EEG flexion epochs - Frequency Domain - Channels'
                 disp(['EEG flexion epochs - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Flexion_based;
@@ -168,11 +168,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG extension epochs - Time Domain - Channels'
                 disp(['EEG extension epochs - Time Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Extension_based;
-                EEG_extension_epochs_Time_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Extension', 'Channels');
             case 'EEG extension epochs - Time Domain - ICs'
                 disp(['EEG extension epochs - Time Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_Extension_based;
-                EEG_extension_epochs_Time_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Extension', 'Sources');
             case 'EEG extension epochs - Frequency Domain - Channels'
                 disp(['EEG extension epochs - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Extension_based;
@@ -186,11 +186,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG flex2flex epochs - Time Domain - Channels'
                 disp(['EEG flex2flex epochs - Time Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_FlextoFlex_based;
-                EEG_flextoflex_epochs_Time_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'FlextoFlex', 'Channels');
             case 'EEG flex2flex epochs - Time Domain - ICs'
                 disp(['EEG flex2flex epochs - Time Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_FlextoFlex_based;
-                EEG_flextoflex_epochs_Time_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'FlextoFlex', 'Sources');
             case 'EEG flex2flex epochs - Frequency Domain - Channels'
                 disp(['EEG flex2flex epochs - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_FlextoFlex_based;
