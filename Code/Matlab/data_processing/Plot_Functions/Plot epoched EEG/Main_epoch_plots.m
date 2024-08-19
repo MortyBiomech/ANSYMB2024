@@ -80,9 +80,6 @@ function Main_epoch_plots(subject_id)
     end
 
 
-    % cd('C:\Morteza\Analysis\ANSYMB2024\Code\data_processing\Plot functions\Plot epoched EEG')
-
-
 
     %% Create the main UI figure for selection plot options
     fig = uifigure('Units', 'normalized','Position', [0.2 0.4 0.5 0.32], 'Name', 'Plot EEG Epoched data');
@@ -139,12 +136,12 @@ function Main_epoch_plots(subject_id)
                 EEG_epochs_Time_Domain(data, statMethod, P1, P3, P6, 'Entire Trial', 'Sources');
             case 'EEG entire trials - Frequency Domain - Channels'
                 disp(['EEG entire trials - Frequency Domain - Channels (with ', statMethod, ')']);
-                data = Epoches_Trial_based;
-                EEG_entire_trials_Frequency_Domain_channels(data, statMethod, P1, P3, P6);
+                data = Epochs_Trial_based;
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'Entire Trial', 'Channels');
             case 'EEG entire trials - Frequency Domain - ICs'
                 disp(['EEG entire trials - Frequency Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_Trial_based;
-                EEG_entire_trials_Frequency_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'Entire Trial', 'Sources');
 
             % Flexion Epochs
             case 'EEG flexion epochs - Time Domain - Channels'
@@ -158,11 +155,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG flexion epochs - Frequency Domain - Channels'
                 disp(['EEG flexion epochs - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Flexion_based;
-                EEG_flexion_epochs_Frequency_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'Flexion', 'Channels');
             case 'EEG flexion epochs - Frequency Domain - ICs'
                 disp(['EEG flexion epochs - Frequency Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_Flexion_based;
-                EEG_flexion_epochs_Frequency_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'Flexion', 'Sources');
 
             % Extension Epochs
             case 'EEG extension epochs - Time Domain - Channels'
@@ -176,11 +173,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG extension epochs - Frequency Domain - Channels'
                 disp(['EEG extension epochs - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_Extension_based;
-                EEG_extension_epochs_Frequency_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'Extension', 'Channels');
             case 'EEG extension epochs - Frequency Domain - ICs'
                 disp(['EEG extension epochs - Frequency Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_Extension_based;
-                EEG_extension_epochs_Frequency_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'Extension', 'Sources');
 
             % Flexion-to-Flexion Epochs
             case 'EEG flex2flex epochs - Time Domain - Channels'
@@ -194,11 +191,11 @@ function Main_epoch_plots(subject_id)
             case 'EEG flex2flex epochs - Frequency Domain - Channels'
                 disp(['EEG flex2flex epochs - Frequency Domain - Channels (with ', statMethod, ')']);
                 data = Epochs_FlextoFlex_based;
-                EEG_flextoflex_epochs_Frequency_Domain_channels(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'FlextoFlex', 'Channels');
             case 'EEG flex2flex epochs - Frequency Domain - ICs'
                 disp(['EEG flex2flex epochs - Frequency Domain - ICs (with ', statMethod, ')']);
                 data = Epochs_FlextoFlex_based;
-                EEG_flextoflex_epochs_Frequency_Domain_sources(data, statMethod, P1, P3, P6);
+                EEG_epochs_Frequency_Domain(data, statMethod, P1, P3, P6, 'FlextoFlex', 'Sources');
 
             otherwise
                 disp('Unknown option');

@@ -3,11 +3,247 @@ clc
 clear
 
 %% Add and Define Necessary Paths
-addpath(genpath('C:\Morteza\Analysis\ANSYMB2024')); % main folder containing all codes and data
+addpath(genpath('C:\Morteza\MyProjects\ANSYMB2024')); % main folder containing all codes and data
 addpath(genpath('C:\Morteza\LSL\xdf-Matlab-master')); % required for loading the XDF files.
 
 % Change path to the directory on your PC which raw XDF files are stored:
-rawdata_path = 'C:\Morteza\Analysis\ANSYMB2024\data\0_source_data\';
+data_path = 'C:\Morteza\MyProjects\ANSYMB2024\data\';
+rawdata_path = [data_path, '0_source_data\'];
+
+
+%% Colors for plotting the signals
+All_colours = struct('dark_blue', [0, 0.4470, 0.7410], 'light_blue', [0.3010, 0.7450, 0.9330], ...
+        'dark_orange', [0.8500, 0.3250, 0.0980], 'light_orange', [0.9290, 0.6940, 0.1250], ...
+        'dark_green', [0.4660, 0.6740, 0.1880], 'light_green', [0.5960, 0.8740, 0.5410]);
+
+
+
+
+%% Load data
+load([data_path, '6_Trials_Info_and_Epoched_data', filesep, 'sub-', ...
+    num2str(7), filesep,'Trials_Info.mat']);
+
+load([data_path, '6_Trials_Info_and_Epoched_data', filesep, 'sub-', ...
+    num2str(7), filesep,'Epochs_Flexion_based.mat']);
+
+data = Epochs_Flexion_based;
+
+
+%% Initialize a cell for saving length-normalized EMG data
+EMG_Preprocessed = repmat({struct('without_outlier_removal', [], ...
+    'with_outlier_removal', [])}, 1, length(Trials_Info));
+
+
+
+%% Select the trials with the same Pressure
+P1 = struct();
+P1.trials = [];
+P1.scores = [];
+
+P3 = struct();
+P3.trials = [];
+P3.scores = [];
+
+P6 = struct();
+P6.trials = [];
+P6.scores = [];
+
+for i = 1:length(Trials_Info)
+    p = Trials_Info{1, i}.General.Pressure;
+    switch p
+        case 1
+            P1.trials(1, end+1) = i;
+            P1.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+        case 3
+            P3.trials(1, end+1) = i;
+            P3.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+        case 6
+            P6.trials(1, end+1) = i;
+            P6.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+    end
+            
+end
+
+
+
+%% Lenght Normalization - without outlier removal
+%%% P1
+L_P1 = zeros(1, length(P1.trials));
+for i = 1:length(P1.trials)
+    l = cellfun("length", data{1, P1.trials(i)}.EMG_stream.Sensors_Preprocessed);
+    L_P1(1, i) = max(l);
+end
+[max_L_P1, ~] = max(L_P1);
+
+for i = 1:length(P1.trials)
+    Q = length(data{1, P1.trials(i)}.EMG_stream.Sensors_Preprocessed);
+    for j = 1:Q
+        x_old = data{1, P1.trials(i)}.EMG_stream.Times{1, j};
+        x_new = linspace(x_old(1), x_old(end), max_L_P1);
+        y_old = data{1, P1.trials(i)}.EMG_stream.Sensors_Preprocessed{1, j};
+        y_new = interp1(x_old', y_old', x_new', "spline");
+    
+        EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal(:, :, end + 1) = y_new';
+    end
+    EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal(:, :, 1) = [];
+end
+
+%%% P3
+L_P3 = zeros(1, length(P3.trials));
+for i = 1:length(P3.trials)
+    l = cellfun("length", data{1, P3.trials(i)}.EMG_stream.Sensors_Preprocessed);
+    L_P3(1, i) = max(l);
+end
+[max_L_P3, ~] = max(L_P3);
+
+for i = 1:length(P3.trials)
+    Q = length(data{1, P3.trials(i)}.EMG_stream.Sensors_Preprocessed);
+    for j = 1:Q
+        x_old = data{1, P3.trials(i)}.EMG_stream.Times{1, j};
+        x_new = linspace(x_old(1), x_old(end), max_L_P3);
+        y_old = data{1, P3.trials(i)}.EMG_stream.Sensors_Preprocessed{1, j};
+        y_new = interp1(x_old', y_old', x_new', "spline");
+    
+        EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal(:, :, end + 1) = y_new';
+    end
+    EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal(:, :, 1) = [];
+end
+
+%%% P6
+L_P6 = zeros(1, length(P6.trials));
+for i = 1:length(P6.trials)
+    l = cellfun("length", data{1, P6.trials(i)}.EMG_stream.Sensors_Preprocessed);
+    L_P6(1, i) = max(l);
+end
+[max_L_P6, ~] = max(L_P6);
+
+for i = 1:length(P6.trials)
+    Q = length(data{1, P6.trials(i)}.EMG_stream.Sensors_Preprocessed);
+    for j = 1:Q
+        x_old = data{1, P6.trials(i)}.EMG_stream.Times{1, j};
+        x_new = linspace(x_old(1), x_old(end), max_L_P6);
+        y_old = data{1, P6.trials(i)}.EMG_stream.Sensors_Preprocessed{1, j};
+        y_new = interp1(x_old', y_old', x_new', "spline");
+    
+        EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal(:, :, end + 1) = y_new';
+    end
+    EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal(:, :, 1) = [];
+end
+
+
+%% All the EMGs for one pressure condition together
+EMG_P1 = [];
+for i = 1:length(P1.trials)
+    EMG_P1 = cat(3, EMG_P1, EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal);
+end
+
+EMG_P3 = [];
+for i = 1:length(P3.trials)
+    EMG_P3 = cat(3, EMG_P3, EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal);
+end
+
+EMG_P6 = [];
+for i = 1:length(P6.trials)
+    EMG_P6 = cat(3, EMG_P6, EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal);
+end
+
+
+
+%% Plot EMG signals before outlier removal
+X_P1 = linspace(0, 100, size(EMG_P1, 2));
+X_P3 = linspace(0, 100, size(EMG_P3, 2));
+X_P6 = linspace(0, 100, size(EMG_P6, 2));
+
+%%% P1
+figure();
+tiledlayout(3,4)
+for i = 1:size(EMG_P1, 1)
+    nexttile; hold on;
+
+    plot(X_P1, squeeze(EMG_P1(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5);
+    plot(X_P1, mean(EMG_P1(i, :, :), 3), 'Color', All_colours.dark_blue, 'LineWidth', 2);
+    % plot(X_P1, median(EMG_P1(i,:,:), 3), 'Color', 'k', 'LineWidth', 2, 'LineStyle', '--');
+    
+    hold off;
+end
+
+
+%%% P3
+figure();
+tiledlayout(3,4)
+for i = 1:size(EMG_P1, 1)
+    nexttile; hold on;
+
+    plot(X_P3, squeeze(EMG_P3(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5);
+    plot(X_P3, mean(EMG_P3(i, :, :), 3), 'Color', All_colours.dark_orange, 'LineWidth', 2);
+    
+    hold off;
+end
+
+%%% P6
+figure();
+tiledlayout(3,4)
+for i = 1:size(EMG_P1, 1)
+    nexttile; hold on;
+    
+    plot(X_P6, squeeze(EMG_P6(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5);
+    plot(X_P6, mean(EMG_P6(i, :, :), 3), 'Color', All_colours.dark_green, 'LineWidth', 2);
+    
+    hold off;
+end
+
+
+%% Compute medians and our custom-error to find most similar signals
+
+%%% P1
+err_P1_flx = zeros(size(EMG_P1, 1), size(EMG_P1, 3));
+for m = 1:size(EMG_P1, 1)
+    EMG_P1_median = median(EMG_P1(m,:,:), 3);
+    for i = 1:length(err_P1_flx)
+        err_P1_flx(m, i) = sum((1 + abs(EMG_P1(m, :, i) - EMG_P1_median) ).^6); 
+    end
+end
+figure()
+tiledlayout(3,4)
+for i = 1:size(EMG_P1, 1)
+    nexttile
+    bar(sort(err_P1_flx(m, :)));
+end
+
+
+%%% P3
+err_P3_flx = zeros(size(EMG_P3, 1), size(EMG_P3, 3));
+for m = 1:size(EMG_P3, 1)
+    EMG_P3_median = median(EMG_P3(m,:,:), 3);
+    for i = 1:length(err_P3_flx)
+        err_P3_flx(m, i) = ...
+            sum((1 + abs(EMG_P3(m, :, i) - EMG_P3_median) ).^6); 
+    end
+end
+figure()
+tiledlayout(3,4)
+for i = 1:size(EMG_P3, 1)
+    nexttile
+    bar(sort(err_P3_flx(m, :)));
+end
+
+
+%%% P6
+err_P6_flx = zeros(size(EMG_P6, 1), size(EMG_P6, 3));
+for m = 1:size(EMG_P6, 1)
+    EMG_P6_median = median(EMG_P6(m,:,:), 3);
+    for i = 1:length(err_P6_flx)
+        err_P6_flx(m, i) = ...
+            sum((1 + abs(EMG_P6(m, :, i) - EMG_P6_median) ).^6); 
+    end
+end
+figure()
+tiledlayout(3,4)
+for i = 1:size(EMG_P6, 1)
+    nexttile
+    bar(sort(err_P6_flx(m, :)));
+end
+
 
 %% EMG preprocessing
 % Author: Sonja Hanek

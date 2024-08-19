@@ -139,7 +139,7 @@ function Epochs_Trial_based = ...
         signal = All_EEG(:, start_indx:end_indx);
         % % % Define parameters for the PSD calculation
         window = floor(size(signal,2)/10); % length of each segment
-        noverlap = floor(0.75*window); % number of samples to overlap between segments
+        noverlap = floor(0.9*window); % number of samples to overlap between segments
         [Pxx, freqs] = pwelch(signal', window, noverlap, nfft, Fs);
         Epochs_Trial_based{1, i}.EEG_stream.Raw.Freq_Domain.Freqs = freqs';
         Epochs_Trial_based{1, i}.EEG_stream.Raw.Freq_Domain.Channels = Pxx';
@@ -162,7 +162,7 @@ function Epochs_Trial_based = ...
         signal = channel_data(:, start_indx:end_indx);
         % % Define parameters for the PSD calculation
         window = floor(size(signal,2)/10); % length of each segment
-        noverlap = floor(0.75*window); % number of samples to overlap between segments
+        noverlap = floor(0.9*window); % number of samples to overlap between segments
         [Pxx, freqs] = pwelch(signal', window, noverlap, nfft, Fs);
         Epochs_Trial_based{1, i}.EEG_stream.Preprocessed.Freq_Domain.Freqs = freqs';
         Epochs_Trial_based{1, i}.EEG_stream.Preprocessed.Freq_Domain.Channels = Pxx';
@@ -170,7 +170,7 @@ function Epochs_Trial_based = ...
         signal = source_data(:, start_indx:end_indx);
         % % Define parameters for the PSD calculation
         window = floor(size(signal,2)/10); % length of each segment
-        noverlap = floor(0.75*window); % number of samples to overlap between segments
+        noverlap = floor(0.9*window); % number of samples to overlap between segments
         [Pxx, ~] = pwelch(signal', window, noverlap, nfft, Fs);
         Epochs_Trial_based{1, i}.EEG_stream.Preprocessed.Freq_Domain.Sources = Pxx';
     

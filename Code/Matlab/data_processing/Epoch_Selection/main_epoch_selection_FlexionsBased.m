@@ -148,7 +148,7 @@ function Epochs_Flexion_based = ...
             signal = All_EEG(:, start_indx:end_indx);
             % % % Define parameters for the PSD calculation
             window = floor(size(signal,2)/2); % length of each segment
-            noverlap = floor(0.75*window); % number of samples to overlap between segments
+            noverlap = floor(0.9*window); % number of samples to overlap between segments
             [Pxx, freqs] = pwelch(signal', window, noverlap, nfft, Fs);
             if j == 1; Epochs_Flexion_based{1, i}.EEG_stream.Raw.Freq_Domain.Freqs = freqs'; end
             Epochs_Flexion_based{1, i}.EEG_stream.Raw.Freq_Domain.Channels(:, :, end + 1) = Pxx';
@@ -169,16 +169,16 @@ function Epochs_Flexion_based = ...
             % % Channels
             signal = channel_data(:, start_indx:end_indx);
             % % Define parameters for the PSD calculation
-            window = floor(size(signal,2)/10); % length of each segment
-            noverlap = floor(0.75*window); % number of samples to overlap between segments
+            window = floor(size(signal,2)/2); % length of each segment
+            noverlap = floor(0.9*window); % number of samples to overlap between segments
             [Pxx, freqs] = pwelch(signal', window, noverlap, nfft, Fs);
             if j == 1; Epochs_Flexion_based{1, i}.EEG_stream.Preprocessed.Freq_Domain.Freqs = freqs'; end
             Epochs_Flexion_based{1, i}.EEG_stream.Preprocessed.Freq_Domain.Channels(:, :, end + 1) = Pxx';
             % % Sources
             signal = source_data(:, start_indx:end_indx);
             % % Define parameters for the PSD calculation
-            window = floor(size(signal,2)/10); % length of each segment
-            noverlap = floor(0.75*window); % number of samples to overlap between segments
+            window = floor(size(signal,2)/2); % length of each segment
+            noverlap = floor(0.9*window); % number of samples to overlap between segments
             [Pxx, ~] = pwelch(signal', window, noverlap, nfft, Fs);
             Epochs_Flexion_based{1, i}.EEG_stream.Preprocessed.Freq_Domain.Sources(:, :, end + 1) = Pxx';
 
