@@ -12,9 +12,9 @@ rawdata_path = [data_path, '0_source_data\'];
 
 
 %% Colors for plotting the signals
-All_colours = struct('dark_blue', [0, 0.4470, 0.7410], 'light_blue', [0.3010, 0.7450, 0.9330], ...
-        'dark_orange', [0.8500, 0.3250, 0.0980], 'light_orange', [0.9290, 0.6940, 0.1250], ...
-        'dark_green', [0.4660, 0.6740, 0.1880], 'light_green', [0.5960, 0.8740, 0.5410]);
+All_colours = struct('dark_blue', [0, 0.4470, 0.7410], 'light_blue', [0.5010, 0.8450, 0.9930], ...
+        'dark_orange', [0.8500, 0.3250, 0.0980], 'light_orange', [0.9690, 0.7940, 0.3250], ...
+        'dark_green', [0.4660, 0.6740, 0.1880], 'light_green', [0.7960, 0.9740, 0.7410]);
 
 
 
@@ -133,18 +133,27 @@ end
 
 %% All the EMGs for one pressure condition together
 EMG_P1 = [];
+EMG_P1_trial_id = [];
 for i = 1:length(P1.trials)
     EMG_P1 = cat(3, EMG_P1, EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal);
+    EMG_P1_trial_id = cat(2, EMG_P1_trial_id, ...
+        repmat(P1.trials(i), 1, size(EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal, 3)));
 end
 
 EMG_P3 = [];
+EMG_P3_trial_id = [];
 for i = 1:length(P3.trials)
     EMG_P3 = cat(3, EMG_P3, EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal);
+    EMG_P3_trial_id = cat(2, EMG_P3_trial_id, ...
+        repmat(P3.trials(i), 1, size(EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal, 3)));
 end
 
 EMG_P6 = [];
+EMG_P6_trial_id = [];
 for i = 1:length(P6.trials)
     EMG_P6 = cat(3, EMG_P6, EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal);
+    EMG_P6_trial_id = cat(2, EMG_P6_trial_id, ...
+        repmat(P6.trials(i), 1, size(EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal, 3)));
 end
 
 
@@ -155,6 +164,7 @@ X_P3 = linspace(0, 100, size(EMG_P3, 2));
 X_P6 = linspace(0, 100, size(EMG_P6, 2));
 
 %%% P1
+EMG_P1_median = median(EMG_P1, 3);
 figure();
 tiledlayout(3,4)
 for i = 1:size(EMG_P1, 1)
@@ -162,13 +172,14 @@ for i = 1:size(EMG_P1, 1)
 
     plot(X_P1, squeeze(EMG_P1(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5);
     plot(X_P1, mean(EMG_P1(i, :, :), 3), 'Color', All_colours.dark_blue, 'LineWidth', 2);
-    % plot(X_P1, median(EMG_P1(i,:,:), 3), 'Color', 'k', 'LineWidth', 2, 'LineStyle', '--');
+    plot(X_P1, EMG_P1_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
     
     hold off;
 end
 
 
 %%% P3
+EMG_P3_median = median(EMG_P3, 3);
 figure();
 tiledlayout(3,4)
 for i = 1:size(EMG_P1, 1)
@@ -176,11 +187,13 @@ for i = 1:size(EMG_P1, 1)
 
     plot(X_P3, squeeze(EMG_P3(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5);
     plot(X_P3, mean(EMG_P3(i, :, :), 3), 'Color', All_colours.dark_orange, 'LineWidth', 2);
+    plot(X_P3, EMG_P3_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
     
     hold off;
 end
 
 %%% P6
+EMG_P6_median = median(EMG_P6, 3);
 figure();
 tiledlayout(3,4)
 for i = 1:size(EMG_P1, 1)
@@ -188,61 +201,294 @@ for i = 1:size(EMG_P1, 1)
     
     plot(X_P6, squeeze(EMG_P6(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5);
     plot(X_P6, mean(EMG_P6(i, :, :), 3), 'Color', All_colours.dark_green, 'LineWidth', 2);
-    
+    plot(X_P6, EMG_P6_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
+
     hold off;
 end
 
 
 %% Compute medians and our custom-error to find most similar signals
-
 %%% P1
-err_P1_flx = zeros(size(EMG_P1, 1), size(EMG_P1, 3));
+err_P1_flx = zeros(size(EMG_P1, 1), size(EMG_P1, 3), 2); % In 3rd dimension the trial-id is stored.
 for m = 1:size(EMG_P1, 1)
-    EMG_P1_median = median(EMG_P1(m,:,:), 3);
-    for i = 1:length(err_P1_flx)
-        err_P1_flx(m, i) = sum((1 + abs(EMG_P1(m, :, i) - EMG_P1_median) ).^6); 
+    for i = 1:size(err_P1_flx, 2)
+        err_P1_flx(m, i, 1) = sum((1 + abs(EMG_P1(m, :, i) - EMG_P1_median(m, :)) ).^6);
+        err_P1_flx(m, i, 2) = EMG_P1_trial_id(i);
     end
 end
-figure()
-tiledlayout(3,4)
-for i = 1:size(EMG_P1, 1)
-    nexttile
-    bar(sort(err_P1_flx(m, :)));
+
+% sort error values and keep the trial-ids after sorting
+err_P1_flx_sorted = zeros(size(err_P1_flx));
+EMG_P1_err_sorted = zeros(size(EMG_P1));
+for i = 1:size(err_P1_flx, 1) % Iterate over the first dimension (muscles)
+    % Sort the values in the first slice of the third dimension
+    [sorted_values, sort_idx] = sort(err_P1_flx(i,:,1), 2); 
+    
+    % Rearrange the first slice with the sorted values
+    err_P1_flx_sorted(i,:,1) = sorted_values;
+    
+    % Use the same sorting indices to rearrange the second slice
+    err_P1_flx_sorted(i,:,2) = err_P1_flx(i, sort_idx, 2);
+
+    % Use the sorting indices to rearrange the EMG_P6
+    EMG_P1_err_sorted(i, :, :) = EMG_P1(i, :, sort_idx);
 end
 
 
 %%% P3
-err_P3_flx = zeros(size(EMG_P3, 1), size(EMG_P3, 3));
+err_P3_flx = zeros(size(EMG_P3, 1), size(EMG_P3, 3), 2); % In 3rd dimension the trial-id is stored.
 for m = 1:size(EMG_P3, 1)
-    EMG_P3_median = median(EMG_P3(m,:,:), 3);
-    for i = 1:length(err_P3_flx)
-        err_P3_flx(m, i) = ...
-            sum((1 + abs(EMG_P3(m, :, i) - EMG_P3_median) ).^6); 
+    for i = 1:size(err_P3_flx, 2)
+        err_P3_flx(m, i, 1) = sum((1 + abs(EMG_P3(m, :, i) - EMG_P3_median(m, :)) ).^6);
+        err_P3_flx(m, i, 2) = EMG_P3_trial_id(i);
     end
 end
-figure()
-tiledlayout(3,4)
-for i = 1:size(EMG_P3, 1)
-    nexttile
-    bar(sort(err_P3_flx(m, :)));
+
+% sort error values and keep the trial-ids after sorting
+err_P3_flx_sorted = zeros(size(err_P3_flx));
+EMG_P3_err_sorted = zeros(size(EMG_P3));
+for i = 1:size(err_P3_flx, 1) % Iterate over the first dimension (muscles)
+    % Sort the values in the first slice of the third dimension
+    [sorted_values, sort_idx] = sort(err_P3_flx(i,:,1), 2); 
+    
+    % Rearrange the first slice with the sorted values
+    err_P3_flx_sorted(i,:,1) = sorted_values;
+    
+    % Use the same sorting indices to rearrange the second slice
+    err_P3_flx_sorted(i,:,2) = err_P3_flx(i, sort_idx, 2);
+
+    % Use the sorting indices to rearrange the EMG_P6
+    EMG_P3_err_sorted(i, :, :) = EMG_P3(i, :, sort_idx);
 end
 
 
 %%% P6
-err_P6_flx = zeros(size(EMG_P6, 1), size(EMG_P6, 3));
+err_P6_flx = zeros(size(EMG_P6, 1), size(EMG_P6, 3), 2); % In 3rd dimension the trial-id is stored.
 for m = 1:size(EMG_P6, 1)
-    EMG_P6_median = median(EMG_P6(m,:,:), 3);
-    for i = 1:length(err_P6_flx)
-        err_P6_flx(m, i) = ...
-            sum((1 + abs(EMG_P6(m, :, i) - EMG_P6_median) ).^6); 
+    for i = 1:size(err_P6_flx, 2)
+        err_P6_flx(m, i, 1) = sum((1 + abs(EMG_P6(m, :, i) - EMG_P6_median(m, :)) ).^6);
+        err_P6_flx(m, i, 2) = EMG_P6_trial_id(i);
     end
 end
-figure()
-tiledlayout(3,4)
-for i = 1:size(EMG_P6, 1)
-    nexttile
-    bar(sort(err_P6_flx(m, :)));
+
+% sort error values and keep the trial-ids after sorting
+err_P6_flx_sorted = zeros(size(err_P6_flx));
+EMG_P6_err_sorted = zeros(size(EMG_P6));
+for i = 1:size(err_P6_flx, 1) % Iterate over the first dimension (muscles)
+    % Sort the values in the first slice of the third dimension
+    [sorted_values, sort_idx] = sort(err_P6_flx(i,:,1), 2); 
+    
+    % Rearrange the first slice with the sorted values
+    err_P6_flx_sorted(i,:,1) = sorted_values;
+    
+    % Use the same sorting indices to rearrange the second slice
+    err_P6_flx_sorted(i,:,2) = err_P6_flx(i, sort_idx, 2);
+
+    % Use the sorting indices to rearrange the EMG_P6
+    EMG_P6_err_sorted(i, :, :) = EMG_P6(i, :, sort_idx);
 end
+
+
+%% Now let's decide how many epochs we should keep
+% we keep 25, 50, 75, and 90% of epochs in each muscle with lower errors
+% and then we look the effects of our selection on average signals.
+
+P = 0.8;
+K = floor(P*size(EMG_P1, 3));
+
+EMG_P1_selected = zeros(size(EMG_P1, 1), size(EMG_P1, 2), K);
+for i = 1:size(EMG_P1, 1)
+    EMG_P1_selected(i, :, :) = EMG_P1_err_sorted(i, :, 1:K);
+end
+
+EMG_P3_selected = zeros(size(EMG_P3, 1), size(EMG_P3, 2), K);
+for i = 1:size(EMG_P3, 1)
+    EMG_P3_selected(i, :, :) = EMG_P3_err_sorted(i, :, 1:K);
+end
+
+EMG_P6_selected = zeros(size(EMG_P6, 1), size(EMG_P6, 2), K);
+for i = 1:size(EMG_P6, 1)
+    EMG_P6_selected(i, :, :) = EMG_P6_err_sorted(i, :, 1:K);
+end
+
+
+%% Plot Selected/Removed Epochs and see the effect on the total average
+muscles_names = cellfun(@(x) strrep(x, '_', ' '), ...
+    data{1, 1}.EMG_stream.Names, 'UniformOutput', false);
+figure();
+tiledlayout(2, 2)
+sgtitle(['Effect of removing ', num2str(100*(1-P)), ...
+    '% of epochs (', num2str(size(EMG_P1, 3) - K), ' out of ', ...
+    num2str(size(EMG_P1, 3)), ') with high error values - Pressure 1 bar']);
+for i = 1:size(EMG_P1, 1)-6
+    nexttile; hold on;
+
+    h3 = plot(X_P1, 1e3*squeeze(EMG_P1_err_sorted(i, :, K+1:end))', 'Color', 0.5*[1, 1, 1], 'LineWidth', 0.5);
+
+    h1 = plot(X_P1, 1e3*squeeze(EMG_P1_selected(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5);
+
+    h2 = plot(X_P1, 1e3*mean(EMG_P1_selected(i, :, :), 3), 'Color', All_colours.dark_blue, 'LineWidth', 4);
+
+    h4 = plot(X_P1, 1e3*mean(EMG_P1(i, :, :), 3), 'Color', 'k', 'LineWidth', 2, 'LineStyle', '--');
+
+    h5 = plot(X_P1, 1e3*EMG_P1_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2, 'LineStyle', '--');
+    
+    hold off;
+
+    title(muscles_names{i})
+    xlabel('Cycle [%]')
+    ylabel('mV')
+end
+
+% Create a legend for the entire tiled layout
+lgd = legend([h1(1), h2, h3(1), h4, h5], ...
+    {'Selected Epochs', 'Mean of Selected Epochs', 'Removed Epochs', 'Mean of All Epoch', 'Median of All Epochs'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
+
+
+
+figure();
+tiledlayout(2, 2)
+sgtitle(['Effect of removing ', num2str(100*(1-P)), ...
+    '% of epochs (', num2str(size(EMG_P3, 3) - K), ' out of ', ...
+    num2str(size(EMG_P3, 3)), ') with high error values - Pressure 3 bar']);
+for i = 1:size(EMG_P3, 1)-6
+    nexttile; hold on;
+
+    h3 = plot(X_P3, 1e3*squeeze(EMG_P3_err_sorted(i, :, K+1:end))', 'Color', 0.5*[1, 1, 1], 'LineWidth', 0.5);
+
+    h1 = plot(X_P3, 1e3*squeeze(EMG_P3_selected(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5);
+
+    h2 = plot(X_P3, 1e3*mean(EMG_P3_selected(i, :, :), 3), 'Color', All_colours.dark_orange, 'LineWidth', 4);
+
+    h4 = plot(X_P3, 1e3*mean(EMG_P3(i, :, :), 3), 'Color', 'k', 'LineWidth', 2, 'LineStyle', '--');
+
+    h5 = plot(X_P3, 1e3*EMG_P3_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2, 'LineStyle', '--');
+    
+    hold off;
+
+    title(muscles_names{i})
+    xlabel('Cycle [%]')
+    ylabel('mV')
+end
+
+% Create a legend for the entire tiled layout
+lgd = legend([h1(1), h2, h3(1), h4, h5], ...
+    {'Selected Epochs', 'Mean of Selected Epochs', 'Removed Epochs', 'Mean of All Epoch', 'Median of All Epochs'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
+
+
+
+figure();
+tiledlayout(2, 2)
+sgtitle(['Effect of removing ', num2str(100*(1-P)), ...
+    '% of epochs (', num2str(size(EMG_P6, 3) - K), ' out of ', ...
+    num2str(size(EMG_P6, 3)), ') with high error values - Pressure 6 bar']);
+for i = 1:size(EMG_P6, 1)-6
+    nexttile; hold on;
+
+    h3 = plot(X_P6, 1e3*squeeze(EMG_P6_err_sorted(i, :, K+1:end))', 'Color', 0.5*[1, 1, 1], 'LineWidth', 0.5);
+
+    h1 = plot(X_P6, 1e3*squeeze(EMG_P6_selected(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5);
+
+    h2 = plot(X_P6, 1e3*mean(EMG_P6_selected(i, :, :), 3), 'Color', All_colours.dark_green, 'LineWidth', 4);
+
+    h4 = plot(X_P6, 1e3*mean(EMG_P6(i, :, :), 3), 'Color', 'k', 'LineWidth', 2, 'LineStyle', '--');
+
+    h5 = plot(X_P6, 1e3*EMG_P6_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2, 'LineStyle', '--');
+    
+    hold off;
+
+    title(muscles_names{i})
+    xlabel('Cycle [%]')
+    ylabel('mV')
+end
+
+% Create a legend for the entire tiled layout
+lgd = legend([h1(1), h2, h3(1), h4, h5], ...
+    {'Selected Epochs', 'Mean of Selected Epochs', 'Removed Epochs', 'Mean of All Epoch', 'Median of All Epochs'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
+
+
+
+%% Compare pressure effect on EMG signals
+
+figure();
+alpha = 0.3;
+tiledlayout(2,2)
+sgtitle('Flexion Epochs (Mean $\pm$ STD)', 'Interpreter', 'latex');
+for i = 1:size(EMG_P1, 1)-6 
+    nexttile; hold on;
+
+    upper_curve = 1e3*(mean(EMG_P1_selected(i, :, :), 3) + std(EMG_P1_selected(i, :, :), 0, 3));
+    lower_curve = 1e3*(mean(EMG_P1_selected(i, :, :), 3) - std(EMG_P1_selected(i, :, :), 0, 3));
+
+    h1 = fill([X_P1, fliplr(X_P1)], [upper_curve, fliplr(lower_curve)], All_colours.light_blue, ...
+        'FaceColor', All_colours.light_blue, 'EdgeColor', 'none', 'FaceAlpha', alpha);
+    h2 = plot(X_P1, 1e3*mean(EMG_P1_selected(i, :, :), 3), ...
+        'Color', All_colours.dark_blue, 'LineWidth', 2);
+
+
+    upper_curve = 1e3*(mean(EMG_P3_selected(i, :, :), 3) + std(EMG_P3_selected(i, :, :), 0, 3));
+    lower_curve = 1e3*(mean(EMG_P3_selected(i, :, :), 3) - std(EMG_P3_selected(i, :, :), 0, 3));
+
+    h3 = fill([X_P3, fliplr(X_P3)], [upper_curve, fliplr(lower_curve)], All_colours.light_blue, ...
+        'FaceColor', All_colours.light_orange, 'EdgeColor', 'none', 'FaceAlpha', alpha);
+    h4 = plot(X_P3, 1e3*mean(EMG_P3_selected(i, :, :), 3), ...
+        'Color', All_colours.dark_orange, 'LineWidth', 2);
+
+
+    upper_curve = 1e3*(mean(EMG_P6_selected(i, :, :), 3) + std(EMG_P6_selected(i, :, :), 0, 3));
+    lower_curve = 1e3*(mean(EMG_P6_selected(i, :, :), 3) - std(EMG_P6_selected(i, :, :), 0, 3));
+
+    h5 = fill([X_P6, fliplr(X_P6)], [upper_curve, fliplr(lower_curve)], All_colours.light_blue, ...
+        'FaceColor', All_colours.light_green, 'EdgeColor', 'none', 'FaceAlpha', alpha);
+    h6 = plot(X_P6, 1e3*mean(EMG_P6_selected(i, :, :), 3), ...
+        'Color', All_colours.dark_green, 'LineWidth', 2);
+
+
+    hold off
+
+    title(muscles_names{i})
+    xlabel('Cycle [%]')
+    ylabel('mV')
+end
+
+% Create a legend for the entire tiled layout
+lgd = legend([h2, h4, h6], ...
+    {'Pressure 1 bar', 'Pressure 3 bar', 'Pressure 6 bar'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 %% EMG preprocessing
