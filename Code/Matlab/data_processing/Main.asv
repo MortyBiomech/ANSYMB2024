@@ -181,51 +181,42 @@ for subject = subjects
 	
 	try
 		% load completely processed file
-		EEG_single_subject_final = ...
-            pop_loadset('filename', [ bemobil_config.filename_prefix num2str(subject)...
+		EEG_single_subject_final = pop_loadset('filename', [ bemobil_config.filename_prefix num2str(subject)...
 			'_' bemobil_config.single_subject_cleaned_ICA_filename], 'filepath', output_filepath);
     catch
         disp('...failed. Computing now.')
-    end
-
+	end
 	
-	if ~force_recompute && exist('EEG_single_subject_final','var') ...
-            && ~isempty(EEG_single_subject_final)
+	if ~force_recompute && exist('EEG_single_subject_final','var') && ~isempty(EEG_single_subject_final)
 		clear EEG_single_subject_final
 		disp('Subject is completely preprocessed already.')
 		continue
     end
 
 	%% load data in EEGLAB .set structure
-    % make sure the data is stored in double precision, large datafiles are
-    % supported, no memory mapped objects are used but data is processed 
-    % locally, and two files are used for storing sets (.set and .fdt)
+    % make sure the data is stored in double precision, large datafiles are supported, no memory mapped objects are
+    % used but data is processed locally, and two files are used for storing sets (.set and .fdt)
 	try 
-        pop_editoptions('option_saveversion6', 0, 'option_single', 0, ...
-            'option_memmapdata', 0, 'option_savetwofiles', 1, ...
-            'option_storedisk', 0);
+        pop_editoptions('option_saveversion6', 0, 'option_single', 0, 'option_memmapdata', 0, 'option_savetwofiles', 1, 'option_storedisk', 0);
     catch
         warning('Could NOT edit EEGLAB memory options!!'); 
     end
     
     % load files that were created from xdf to BIDS to EEGLAB
-    EEG = pop_loadset('filename', ...
-        [ bemobil_config.filename_prefix num2str(subject) '_' ...
-        bemobil_config.merged_filename],'filepath',input_filepath);
+    EEG = pop_loadset('filename',[ bemobil_config.filename_prefix num2str(subject) '_' bemobil_config.merged_filename],'filepath',input_filepath);
     
 
     %% Load channels location file
     EEG = pop_chanedit(EEG,'load', [processing_path, 'chanlocs.ced']);
 
     %% Remove acceleration (ACC) channels
-    % ALLEEG.chanlocs(65:67) = [];
-    % ALLEEG.nbchan = 64;
-    % ALLEEG.data(65:67, :) = [];
+    ALLEEG.chanlocs(65:67) = [];
+    ALLEEG.nbchan = 64;
+    ALLEEG.data(65:67, :) = [];
 
     EEG.chanlocs(65:67) = [];
     EEG.nbchan = 64;
     EEG.data(65:67, :) = [];
-
 
     %% Define and Add events
     % Compute latency values
@@ -439,14 +430,14 @@ for subject = subjects
     
     removeindices = zeros(numel(start_beep)+1 ,2);
     % remove from start to first event
-    removeindices(1, :) = [0 EEG.event(1).latency-50]; 
+    removeindices(1, :) = [0 EEG.event(1).latency]; 
 
     % add more removeIndices here for pauses or itnerruptions of the 
     % experiment if they have markers or you know their indices in the data
     for i = 1:numel(start_beep)-1
-        removeindices(i+1, :) = [EEG.event(6*i-1).latency+50 EEG.event(6*i+1).latency-50];
+        removeindices(i+1, :) = [EEG.event(6*i-1).latency EEG.event(6*i+1).latency];
     end
-    removeindices(end, :) = [EEG.event(end-1).latency+50 EEG.pnts]; % remove from last event to the end
+    removeindices(end, :) = [EEG.event(end-1).latency EEG.pnts]; % remove from last event to the end
     
 
     %%

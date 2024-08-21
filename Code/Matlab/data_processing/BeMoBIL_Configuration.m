@@ -1,8 +1,8 @@
-function bemobil_config = BeMoBIL_Configuration()
+function bemobil_config = BeMoBIL_Configuration(data_path)
 
     %% BeMoBIL Configuration
     %% General Setup
-    bemobil_config.study_folder = ['C:\Morteza\Analysis\ANSYMB2024' filesep 'data' filesep]; 
+    bemobil_config.study_folder = data_path; 
     bemobil_config.filename_prefix = 'sub-';
     
     % foldernames (NEED to have a filesep at the end, sorry!) 
