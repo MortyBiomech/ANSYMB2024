@@ -1,0 +1,9 @@
+labels: GND
+sph_radius: 1
+sph_theta: 0
+sph_phi: 0
+theta: 0
+radius: 0.5
+X: 1
+Y: 0
+Z: 0

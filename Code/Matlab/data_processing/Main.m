@@ -11,7 +11,7 @@ addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127')
 addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127\fileio')
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 5;
+subject_id = 8;
 rawdata_path = [study_path, '0_source_data\'];
 output = runs_concatenated(subject_id, rawdata_path);
 
@@ -156,10 +156,10 @@ bemobil_bids2set(config);
 
 
 %% Configuration of the BeMoBIL pipeline
-bemobil_config = BeMoBIL_Configuration(data_path);
+bemobil_config = BeMoBIL_Configuration(study_path);
 
 % enter all subjects to process here (you can split it up in more MATLAB instances if you have more CPU power and RAM)
-subjects = 5; 
+subjects = 8; 
 
 % set to 1 if all files should be computed, independently of whether they are present on disk or not
 force_recompute = 0; 
@@ -214,18 +214,11 @@ for subject = subjects
         bemobil_config.merged_filename],'filepath',input_filepath);
     
 
+    %% reselect EEG channels and remove ACC channels
+    EEG = pop_select(EEG, 'rmchannel', [65, 66, 67]);
+
     %% Load channels location file
-    EEG = pop_chanedit(EEG,'load', [processing_path, 'chanlocs.ced']);
-
-    %% Remove acceleration (ACC) channels
-    % ALLEEG.chanlocs(65:67) = [];
-    % ALLEEG.nbchan = 64;
-    % ALLEEG.data(65:67, :) = [];
-
-    EEG.chanlocs(65:67) = [];
-    EEG.nbchan = 64;
-    EEG.data(65:67, :) = [];
-
+    EEG = pop_chanedit(EEG,'load', [processing_path, 'chanlocs.ced']); 
 
     %% Define and Add events
     % Compute latency values

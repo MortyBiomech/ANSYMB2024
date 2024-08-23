@@ -1,6 +1,6 @@
 Number	labels	theta	radius	X	Y	Z	sph_theta	sph_phi	sph_radius	type	
 1	Fp1	-18	0.5	0.951	0.309	  0	 18	  0	  1	EEG	
-2	Fz	  0	0.25	0.707	 -0	0.707	 -0	 45	  1	EEG	
+2	Fz	 -0	0.25	0.707	  0	0.707	  0	 45	  1	EEG	
 3	F3	-39	0.333	0.673	0.545	0.5	 39	 30	  1	EEG	
 4	F7	-54	0.5	0.588	0.809	  0	 54	  0	  1	EEG	
 5	FT9	-72	0.628	0.284	0.875	-0.391	 72	-23	  1	EEG	
@@ -33,7 +33,7 @@ Number	labels	theta	radius	X	Y	Z	sph_theta	sph_phi	sph_radius	type
 32	Fp2	 18	0.5	0.951	-0.309	  0	-18	  0	  1	EEG	
 33	AF7	-36	0.5	0.809	0.588	  0	 36	  0	  1	EEG	
 34	AF3	-22	0.411	0.891	0.36	0.276	 22	 16	  1	EEG	
-35	AFz	  0	0.372	0.921	 -0	0.391	 -0	 23	  1	EEG	
+35	AFz	 -0	0.372	0.921	  0	0.391	  0	 23	  1	EEG	
 36	F1	-22	0.272	0.7	0.283	0.656	 22	 41	  1	EEG	
 37	F5	-49	0.411	0.631	0.725	0.276	 49	 16	  1	EEG	
 38	FT7	-72	0.5	0.309	0.951	  0	 72	  0	  1	EEG	
@@ -63,3 +63,6 @@ Number	labels	theta	radius	X	Y	Z	sph_theta	sph_phi	sph_radius	type
 62	AF4	 22	0.411	0.891	-0.36	0.276	-22	 16	  1	EEG	
 63	F2	 22	0.272	0.7	-0.283	0.656	-22	 41	  1	EEG	
 64	Iz	180	0.622	-0.927	-1.14e-16	-0.375	-180	-22	  1	EEG	
+65	ACC_X	   	   	   	   	   	   	   	   		
+66	ACC_Y	   	   	   	   	   	   	   	   		
+67	ACC_Z	   	   	   	   	   	   	   	   		

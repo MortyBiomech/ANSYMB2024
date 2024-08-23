@@ -167,7 +167,7 @@ function bemobil_config = BeMoBIL_Configuration(data_path)
     %% finalization
     
     % filtering the final dataset
-    bemobil_config.final_filter_lower_edge = 0.2; % this should not lead to any issues downstream but remove all very slow drifts
+    bemobil_config.final_filter_lower_edge = 1; % this should not lead to any issues downstream but remove all very slow drifts
     bemobil_config.final_filter_higher_edge = [];
     
     %% Motion Processing Parameters
