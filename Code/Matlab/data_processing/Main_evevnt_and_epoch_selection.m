@@ -11,7 +11,7 @@ rawdata_path = [data_path, '0_source_data\'];
 
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 7;
+subject_id = 5;
 output = runs_concatenated(subject_id, rawdata_path);
 
 
@@ -24,7 +24,7 @@ All_Experiment = output.All_Exp;
 All_Experiment_time = output.All_Exp_time;
 
 
-%% load Preprocessed EEG
+%% load Preprocessed EEG (Cleaned with ICA)
 if ~exist('ALLCOM','var')
 	eeglab;
 end
@@ -42,12 +42,23 @@ EEG = pop_loadset('filename', filename, 'filepath', filepath);
     pks_low_peaks, locs_low_peaks, ...
     trial_pks_high_peaks, trial_locs_high_peaks, ...
     trial_pks_low_peaks, trial_locs_low_peaks, ...
+    N_Trials, ...
     Trials_encoder_events] = find_peaks_and_select_events(output);
 
-% Matlab App for deselecting undesired peaks of Encoder data
-find_flexion_extension_events
 
-% Find all events based on entire trials, flexions, extension, and
+%% Matlab App for deselecting undesired peaks of Encoder data
+% find_flexion_extension_events
+
+
+%% Matlab App for marking the bad trials to exclude from post-processing
+bad_trials_EEG_based = [];
+mark_bad_trials_of_EEG_data
+filepath = [data_path, '6_0_Trials_Info_and_Events\', 'sub-', ...
+    num2str(subject_id), filesep];
+filename = 'bad_trials_EEG_based.mat';
+save(fullfile(filepath, filename), 'bad_trials_EEG_based')
+
+%% Find all events based on entire trials, flexions, extension, and
 % flextoflex  epochs and store in a big structure (Trials_Info.mat)
 Trials_Info = Main_event_selection(input_streams, ...
                                    EEG, ...

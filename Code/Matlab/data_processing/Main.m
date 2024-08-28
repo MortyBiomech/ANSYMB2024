@@ -11,7 +11,7 @@ addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127')
 addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127\fileio')
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 8;
+subject_id = 5;
 rawdata_path = [study_path, '0_source_data\'];
 output = runs_concatenated(subject_id, rawdata_path);
 
@@ -159,7 +159,7 @@ bemobil_bids2set(config);
 bemobil_config = BeMoBIL_Configuration(study_path);
 
 % enter all subjects to process here (you can split it up in more MATLAB instances if you have more CPU power and RAM)
-subjects = 8; 
+subjects = 5; 
 
 % set to 1 if all files should be computed, independently of whether they are present on disk or not
 force_recompute = 0; 
