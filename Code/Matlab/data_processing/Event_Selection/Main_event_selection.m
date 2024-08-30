@@ -684,8 +684,35 @@ function Trials_Info = Main_event_selection(input_streams, ...
     
     
     %% Save Trials_Info
+
     save_path = [data_path, '6_Trials_Info_and_Epoched_data\', ...
         'sub-', num2str(subject_id)];
-    save(fullfile(save_path, 'Trials_Info.mat'), 'Trials_Info', '-v7.3');
+    fullFilePath = fullfile(save_path, 'Trials_Info.mat');
+
+    if ~isfolder(save_path)
+        mkdir(save_path);
+        save(fullfile(save_path, 'Trials_Info.mat'), 'Trials_Info', '-v7.3');
+        disp(['Trials_Info.mat saved to ', save_path]);
+    else
+        % Folder exists, check if the Trials_Info already exists
+        if exist(fullFilePath, 'file')
+            % File exists, ask user for permission to overwrite using a dialog box
+            choice = questdlg('Trials_Info.mat already exists. Do you want to overwrite it?', ...
+                              'Confirm Overwrite', ...
+                              'OK', 'Cancel', 'OK');
+            switch choice
+                case 'OK'
+                    save(fullfile(save_path, 'Trials_Info.mat'), 'Trials_Info', '-v7.3');
+                    disp(['Trials_Info.mat overwritten and saved to ', save_path]);
+                case 'Cancel'
+                    disp('Trials_Info.mat was not saved.');
+            end
+        else
+            % File does not exist, save the Trials_Info.mat
+            save(fullfile(save_path, 'Trials_Info.mat'), 'Trials_Info', '-v7.3');
+            disp(['Trials_Info.mat saved to ', save_path]);
+        end
+    end
+    
 
 end
