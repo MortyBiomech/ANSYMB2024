@@ -8,7 +8,7 @@ function EEG_epochs_Frequency_Domain(data, std_sem, P1, P3, P6, condition, ch_sr
         'dark_green', [0.4660, 0.6740, 0.1880], 'light_green', [0.5960, 0.8740, 0.5410]);
 
 
-    %% EEG_trials - Time-Domain: channels
+    %% EEG_trials - Freq-Domain: channels/sources
     % making 3d matrix for each pressure condiotion
     % P1
     numChannels = size(data{1, P1.trials(1)}.EEG_stream.Preprocessed.Freq_Domain.(ch_sr), 1);
@@ -73,10 +73,10 @@ function EEG_epochs_Frequency_Domain(data, std_sem, P1, P3, P6, condition, ch_sr
     signal_P6_3d = 10*log10(signal_P6_3d);
     
 
-    % perecent of epoch for x-axis
-    XP1 = linspace(0, 100, numPointsP1);
-    XP3 = linspace(0, 100, numPointsP3);
-    XP6 = linspace(0, 100, numPointsP6);
+    % freqs
+    XP1 = data{1, P1.trials(1)}.EEG_stream.Preprocessed.Freq_Domain.Freqs;
+    XP3 = data{1, P3.trials(1)}.EEG_stream.Preprocessed.Freq_Domain.Freqs;
+    XP6 = data{1, P6.trials(1)}.EEG_stream.Preprocessed.Freq_Domain.Freqs;
     
     mean_signalP1 = mean(signal_P1_3d, 3);
     mean_signalP3 = mean(signal_P3_3d, 3);
@@ -120,7 +120,7 @@ function EEG_epochs_Frequency_Domain(data, std_sem, P1, P3, P6, condition, ch_sr
     h1 = []; h2 = []; h3 = [];
     XLabel_n = 'Frequency [Hz]';
     YLabel_n = 'Power 10*log_{10}(\muV^2/Hz)';
-    XLim_n = [0.5 50];
+    XLim_n = [1 50];
     figure('Units','normalized','Position',[0.1,0.1,0.8,0.8]);
     tiledlayout(8,8)
     sgtitle(sprintf(['Frequency-Domain (', condition,', Mean $\\pm$ %s): %d trials P1, %d trials P3, %d trials P6'], ...
@@ -143,7 +143,7 @@ function EEG_epochs_Frequency_Domain(data, std_sem, P1, P3, P6, condition, ch_sr
         %     All_colours.light_green, 'FaceAlpha', 0.3, 'EdgeColor', 'none');
         h3 = plot(XP6, mean_signalP6(i, :), 'Color', All_colours.dark_green);
         
-        set(gca, 'XLim', [0.5 50])
+        set(gca, 'XLim', [1 50])
 
         title(subplot_title{i});
         ax = gca;

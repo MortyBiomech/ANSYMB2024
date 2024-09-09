@@ -69,7 +69,7 @@ function EEG_epochs_Time_Domain(data, std_sem, P1, P3, P6, condition, ch_sr)
         signal_P6_3d(:,:, M(i-1)+1:M(i)) = tempdata;
     end
     
-    
+      
     % perecent of epoch for x-axis
     XP1 = linspace(0, 100, numPointsP1);
     XP3 = linspace(0, 100, numPointsP3);
