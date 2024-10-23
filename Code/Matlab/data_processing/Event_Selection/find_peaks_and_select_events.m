@@ -1,30 +1,29 @@
-function [start_beep, finish_beep, XLimits, ...
-    pks_high_peaks, locs_high_peaks, pks_low_peaks, locs_low_peaks, ...
-    trial_pks_high_peaks, trial_locs_high_peaks, ...
-    trial_pks_low_peaks, trial_locs_low_peaks, ...
-    N_Trials, ...
-    Trials_encoder_events] = ...
-    find_peaks_and_select_events(input_streams)
+function output_peaks = find_peaks_and_select_events(output)
 
 
     %% Extract the data
-    All_Experiment = input_streams.All_Exp;
-    All_Experiment_time = input_streams.All_Exp_time;
+    All_Experiment = output.All_Exp;
+    All_Experiment_time = output.All_Exp_time;
     
+
+    %% find start and end of trials and movements
+    % start_move event (second single beep, 2s after pressure change)
+    start_move = find(diff(All_Experiment(6, :)) == 1);
+    start_move = reshape(start_move, 2, []);
+    start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+
+    % finish_beep event (20s after start_move event, double beep to stop movement)
+    finish_beep = find(diff(All_Experiment(6, :)) == -2);
+    finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+
     
     %% find start and finish beep moments
-    start_beep = find(diff(All_Experiment(6, :)) == 1);
-    start_beep(1:6) = [];
-    finish_beep = find(diff(All_Experiment(6, :)) == -1);
-    finish_beep(1:6) = [];
-    
-    
-    XLimits = [All_Experiment_time(1,start_beep)' ...
-        All_Experiment_time(1,finish_beep)'];
+    XLimits = [start_move_time_Expdata' finish_beep_time_Expdata'];
     [pks_high_peaks, locs_high_peaks] = findpeaks(All_Experiment(1, :));
     [pks_low_peaks, locs_low_peaks] = findpeaks((-1)*All_Experiment(1, :));
     pks_low_peaks = -pks_low_peaks;
     
+
     %% find peaks between single and double beep sounds
     trial_pks_high_peaks  = [];
     trial_locs_high_peaks = [];
@@ -32,36 +31,52 @@ function [start_beep, finish_beep, XLimits, ...
     trial_pks_low_peaks   = [];
     trial_locs_low_peaks  = [];
     
-    for i = 1:length(start_beep)
-        
-        trial_locs_high_peaks = [trial_locs_high_peaks ...
+    for i = 1:length(start_move_time_Expdata)
+        trial_locs_high_peaks = cat(2 , trial_locs_high_peaks, ...
             locs_high_peaks(1, ...
-            start_beep(i) <= locs_high_peaks & ...
-            locs_high_peaks <= finish_beep(i))];
-        trial_pks_high_peaks = [trial_pks_high_peaks ...
+            start_move(2, i) <= locs_high_peaks & ...
+            locs_high_peaks <= finish_beep(1, i)));
+        trial_pks_high_peaks = cat(2, trial_pks_high_peaks, ...
             pks_high_peaks(1, ...
-            start_beep(i) <= locs_high_peaks & ...
-            locs_high_peaks <= finish_beep(i))];
+            start_move(2, i) <= locs_high_peaks & ...
+            locs_high_peaks <= finish_beep(1, i)));
     
-        trial_locs_low_peaks = [trial_locs_low_peaks ...
+        trial_locs_low_peaks = cat(2, trial_locs_low_peaks, ...
             locs_low_peaks(1, ...
-            start_beep(i) <= locs_low_peaks & ...
-            locs_low_peaks <= finish_beep(i))];
-        trial_pks_low_peaks = [trial_pks_low_peaks ...
+            start_move(2, i) <= locs_low_peaks & ...
+            locs_low_peaks <= finish_beep(1, i)));
+        trial_pks_low_peaks = cat(2, trial_pks_low_peaks, ...
             pks_low_peaks(1, ...
-            start_beep(i) <= locs_low_peaks & ...
-            locs_low_peaks <= finish_beep(i))];
-    
+            start_move(2, i) <= locs_low_peaks & ...
+            locs_low_peaks <= finish_beep(1, i)));
     end
+
 
     %% Number of Trials
     N_Trials = size(XLimits, 1);
     
+
     %% Initialize Trials information
-    Trials_encoder_events = cell(1, size(XLimits,1));
-    for i = 1:numel(Trials_encoder_events)
-        Trials_encoder_events{1, i}.high_peaks = [];
-        Trials_encoder_events{1, i}.low_peaks  = [];
-    end
+    Trials_encoder_events = ...
+        repmat({struct('Description', [], 'Pressure', [], 'Score', [], ...
+        'high_peaks', [], 'low_peaks', [], 'Case', [], ...
+        'Flexion_Start', [], 'Flexion_End', [], ...
+        'Extension_Start', [], 'Extension_End', [])}, ...
+        1, size(XLimits,1));
+
+
+    %% make the output
+    output_peaks.XLimits = XLimits;
+
+    output_peaks.trial_pks_high_peaks = trial_pks_high_peaks;
+    output_peaks.trial_locs_high_peaks = trial_locs_high_peaks;
+
+    output_peaks.trial_pks_low_peaks = trial_pks_low_peaks;
+    output_peaks.trial_locs_low_peaks = trial_locs_low_peaks;
+
+    output_peaks.N_Trials = N_Trials;
+
+    output_peaks.Trials_encoder_events = Trials_encoder_events;
+
 
 end

@@ -20,22 +20,40 @@ All_colours = struct('dark_blue', [0, 0.4470, 0.7410], 'light_blue', [0.5010, 0.
 
 
 %% Load data
-load([data_path, '6_Trials_Info_and_Epoched_data', filesep, 'sub-', ...
-    num2str(7), filesep,'Trials_Info.mat']);
+subject_id = 8;
 
 load([data_path, '6_Trials_Info_and_Epoched_data', filesep, 'sub-', ...
-    num2str(7), filesep,'Epochs_Flexion_based.mat']);
+    num2str(subject_id), filesep,'Trials_Info.mat']);
 
-data = Epochs_Flexion_based;
+condition = 1;
+switch condition
+    case 1
+        epoch_base = 'Flexion epochs';
+        load([data_path, '6_Trials_Info_and_Epoched_data', filesep, 'sub-', ...
+            num2str(subject_id), filesep,'Epochs_Flexion_based.mat']);
+        data = Epochs_Flexion_based;
+    case 2
+        epoch_base = 'Extension epochs';
+        load([data_path, '6_Trials_Info_and_Epoched_data', filesep, 'sub-', ...
+            num2str(subject_id), filesep,'Epochs_Extension_based.mat']);
+        data = Epochs_Extension_based;
+end
 
+Names = data{1,1}.EMG_stream.Names;
+Names = cellfun(@(x) strrep(x, '_', ' '), Names, 'UniformOutput', false);
 
 %% Initialize a cell for saving length-normalized EMG data
-EMG_Preprocessed = repmat({struct('without_outlier_removal', [], ...
+EMG_Preprocessed = repmat({struct('without_outlier_removal', struct('value', [], 'RMS', []), ...
     'with_outlier_removal', [])}, 1, length(Trials_Info));
 
 
-
 %% Select the trials with the same Pressure
+bad_trials_path = [data_path, '6_0_Trials_Info_and_Events', ...
+    filesep, 'sub-', num2str(subject_id)];
+
+b = load(fullfile(bad_trials_path, 'bad_trials_EEG_based.mat'));
+bad_trials_EEG_based = b.bad_trials_EEG_based;
+
 P1 = struct();
 P1.trials = [];
 P1.scores = [];
@@ -49,19 +67,20 @@ P6.trials = [];
 P6.scores = [];
 
 for i = 1:length(Trials_Info)
-    p = Trials_Info{1, i}.General.Pressure;
-    switch p
-        case 1
-            P1.trials(1, end+1) = i;
-            P1.scores(1, end+1) = Trials_Info{1, i}.General.Score;
-        case 3
-            P3.trials(1, end+1) = i;
-            P3.scores(1, end+1) = Trials_Info{1, i}.General.Score;
-        case 6
-            P6.trials(1, end+1) = i;
-            P6.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+    if ~ismember(i, bad_trials_EEG_based)
+        p = Trials_Info{1, i}.General.Pressure;
+        switch p
+            case 1
+                P1.trials(1, end+1) = i;
+                P1.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+            case 3
+                P3.trials(1, end+1) = i;
+                P3.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+            case 6
+                P6.trials(1, end+1) = i;
+                P6.scores(1, end+1) = Trials_Info{1, i}.General.Score;
+        end
     end
-            
 end
 
 
@@ -83,9 +102,9 @@ for i = 1:length(P1.trials)
         y_old = data{1, P1.trials(i)}.EMG_stream.Sensors_Preprocessed{1, j};
         y_new = interp1(x_old', y_old', x_new', "spline");
     
-        EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal(:, :, end + 1) = y_new';
+        EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal.value(:, :, end + 1) = y_new';
     end
-    EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal(:, :, 1) = [];
+    EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal.value(:, :, 1) = [];
 end
 
 %%% P3
@@ -104,9 +123,9 @@ for i = 1:length(P3.trials)
         y_old = data{1, P3.trials(i)}.EMG_stream.Sensors_Preprocessed{1, j};
         y_new = interp1(x_old', y_old', x_new', "spline");
     
-        EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal(:, :, end + 1) = y_new';
+        EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal.value(:, :, end + 1) = y_new';
     end
-    EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal(:, :, 1) = [];
+    EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal.value(:, :, 1) = [];
 end
 
 %%% P6
@@ -125,9 +144,9 @@ for i = 1:length(P6.trials)
         y_old = data{1, P6.trials(i)}.EMG_stream.Sensors_Preprocessed{1, j};
         y_new = interp1(x_old', y_old', x_new', "spline");
     
-        EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal(:, :, end + 1) = y_new';
+        EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal.value(:, :, end + 1) = y_new';
     end
-    EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal(:, :, 1) = [];
+    EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal.value(:, :, 1) = [];
 end
 
 
@@ -135,25 +154,25 @@ end
 EMG_P1 = [];
 EMG_P1_trial_id = [];
 for i = 1:length(P1.trials)
-    EMG_P1 = cat(3, EMG_P1, EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal);
+    EMG_P1 = cat(3, EMG_P1, EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal.value);
     EMG_P1_trial_id = cat(2, EMG_P1_trial_id, ...
-        repmat(P1.trials(i), 1, size(EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal, 3)));
+        repmat(P1.trials(i), 1, size(EMG_Preprocessed{1, P1.trials(i)}.without_outlier_removal.value, 3)));
 end
 
 EMG_P3 = [];
 EMG_P3_trial_id = [];
 for i = 1:length(P3.trials)
-    EMG_P3 = cat(3, EMG_P3, EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal);
+    EMG_P3 = cat(3, EMG_P3, EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal.value);
     EMG_P3_trial_id = cat(2, EMG_P3_trial_id, ...
-        repmat(P3.trials(i), 1, size(EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal, 3)));
+        repmat(P3.trials(i), 1, size(EMG_Preprocessed{1, P3.trials(i)}.without_outlier_removal.value, 3)));
 end
 
 EMG_P6 = [];
 EMG_P6_trial_id = [];
 for i = 1:length(P6.trials)
-    EMG_P6 = cat(3, EMG_P6, EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal);
+    EMG_P6 = cat(3, EMG_P6, EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal.value);
     EMG_P6_trial_id = cat(2, EMG_P6_trial_id, ...
-        repmat(P6.trials(i), 1, size(EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal, 3)));
+        repmat(P6.trials(i), 1, size(EMG_Preprocessed{1, P6.trials(i)}.without_outlier_removal.value, 3)));
 end
 
 
@@ -166,48 +185,62 @@ X_P6 = linspace(0, 100, size(EMG_P6, 2));
 %%% P1
 EMG_P1_median = median(EMG_P1, 3);
 figure();
-tiledlayout(3,4)
+t = tiledlayout(3,4);
+title(t, [epoch_base, ', Pressure 1 bar, Before outlier removal'])
 for i = 1:size(EMG_P1, 1)
     nexttile; hold on;
-
-    plot(X_P1, squeeze(EMG_P1(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5);
-    plot(X_P1, mean(EMG_P1(i, :, :), 3), 'Color', All_colours.dark_blue, 'LineWidth', 2);
-    plot(X_P1, EMG_P1_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
+    title(Names{i})
+    xlabel('Cycle [%]')
+    ylabel('EMG Activity [\muV]')
+    h1 = plot(X_P1, 1e3*squeeze(EMG_P1(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5);
+    h2 = plot(X_P1, 1e3*mean(EMG_P1(i, :, :), 3), 'Color', All_colours.dark_blue, 'LineWidth', 2);
+    h3 = plot(X_P1, 1e3*EMG_P1_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
     
     hold off;
 end
-
+lgd = legend([h1(1), h2, h3], {'All epochs', 'mean', 'median'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
 
 %%% P3
 EMG_P3_median = median(EMG_P3, 3);
 figure();
-tiledlayout(3,4)
+t = tiledlayout(3,4);
+title(t, [epoch_base, ', Pressure 3 bar, Before outlier removal'])
 for i = 1:size(EMG_P1, 1)
     nexttile; hold on;
-
-    plot(X_P3, squeeze(EMG_P3(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5);
-    plot(X_P3, mean(EMG_P3(i, :, :), 3), 'Color', All_colours.dark_orange, 'LineWidth', 2);
-    plot(X_P3, EMG_P3_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
+    title(Names{i})
+    xlabel('Cycle [%]')
+    ylabel('EMG Activity [\muV]')
+    h1 = plot(X_P3, 1e3*squeeze(EMG_P3(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5);
+    h2 = plot(X_P3, 1e3*mean(EMG_P3(i, :, :), 3), 'Color', All_colours.dark_orange, 'LineWidth', 2);
+    h3 = plot(X_P3, 1e3*EMG_P3_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
     
     hold off;
 end
+lgd = legend([h1(1), h2, h3], {'All epochs', 'mean', 'median'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
 
 %%% P6
 EMG_P6_median = median(EMG_P6, 3);
 figure();
-tiledlayout(3,4)
+t = tiledlayout(3,4);
+title(t, [epoch_base, ', Pressure 6 bar, Before outlier removal'])
 for i = 1:size(EMG_P1, 1)
     nexttile; hold on;
-    
-    plot(X_P6, squeeze(EMG_P6(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5);
-    plot(X_P6, mean(EMG_P6(i, :, :), 3), 'Color', All_colours.dark_green, 'LineWidth', 2);
-    plot(X_P6, EMG_P6_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
+    title(Names{i})
+    xlabel('Cycle [%]')
+    ylabel('EMG Activity [\muV]')
+    h1 = plot(X_P6, 1e3*squeeze(EMG_P6(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5);
+    h2 = plot(X_P6, 1e3*mean(EMG_P6(i, :, :), 3), 'Color', All_colours.dark_green, 'LineWidth', 2);
+    h3 = plot(X_P6, 1e3*EMG_P6_median(i, :), 'Color', [0.5, 0, 0.5], 'LineWidth', 2);
 
     hold off;
 end
+lgd = legend([h1(1), h2, h3], {'All epochs', 'mean', 'median'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
 
 
-%% Compute medians and our custom-error to find most similar signals
+%% Compute medians and our custom-made error to find most similar signals
 %%% P1
 err_P1_flx = zeros(size(EMG_P1, 1), size(EMG_P1, 3), 2); % In 3rd dimension the trial-id is stored.
 for m = 1:size(EMG_P1, 1)
@@ -293,19 +326,21 @@ end
 % we keep 25, 50, 75, and 90% of epochs in each muscle with lower errors
 % and then we look the effects of our selection on average signals.
 
-P = 0.8;
-K = floor(P*size(EMG_P1, 3));
+P = 0.6; % keep P*100 percent of epochs
 
+K = floor(P*size(EMG_P1, 3));
 EMG_P1_selected = zeros(size(EMG_P1, 1), size(EMG_P1, 2), K);
 for i = 1:size(EMG_P1, 1)
     EMG_P1_selected(i, :, :) = EMG_P1_err_sorted(i, :, 1:K);
 end
 
+K = floor(P*size(EMG_P3, 3));
 EMG_P3_selected = zeros(size(EMG_P3, 1), size(EMG_P3, 2), K);
 for i = 1:size(EMG_P3, 1)
     EMG_P3_selected(i, :, :) = EMG_P3_err_sorted(i, :, 1:K);
 end
 
+K = floor(P*size(EMG_P6, 3));
 EMG_P6_selected = zeros(size(EMG_P6, 1), size(EMG_P6, 2), K);
 for i = 1:size(EMG_P6, 1)
     EMG_P6_selected(i, :, :) = EMG_P6_err_sorted(i, :, 1:K);
@@ -313,19 +348,18 @@ end
 
 
 %% Plot Selected/Removed Epochs and see the effect on the total average
-muscles_names = cellfun(@(x) strrep(x, '_', ' '), ...
-    data{1, 1}.EMG_stream.Names, 'UniformOutput', false);
+
 figure();
 tiledlayout(2, 2)
 sgtitle(['Effect of removing ', num2str(100*(1-P)), ...
     '% of epochs (', num2str(size(EMG_P1, 3) - K), ' out of ', ...
-    num2str(size(EMG_P1, 3)), ') with high error values - Pressure 1 bar']);
+    num2str(size(EMG_P1, 3)), ') with high error values - Pressure 1 bar, ', epoch_base]);
 for i = 1:size(EMG_P1, 1)-6
     nexttile; hold on;
 
     h3 = plot(X_P1, 1e3*squeeze(EMG_P1_err_sorted(i, :, K+1:end))', 'Color', 0.5*[1, 1, 1], 'LineWidth', 0.5);
 
-    h1 = plot(X_P1, 1e3*squeeze(EMG_P1_selected(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5);
+    h1 = plot(X_P1, 1e3*squeeze(EMG_P1_selected(i, :, :))', 'Color', All_colours.light_blue, 'LineWidth', 0.5, 'LineStyle', '--');
 
     h2 = plot(X_P1, 1e3*mean(EMG_P1_selected(i, :, :), 3), 'Color', All_colours.dark_blue, 'LineWidth', 4);
 
@@ -335,9 +369,9 @@ for i = 1:size(EMG_P1, 1)-6
     
     hold off;
 
-    title(muscles_names{i})
+    title(Names{i})
     xlabel('Cycle [%]')
-    ylabel('mV')
+    ylabel('EMG Activity [\muV]')
 end
 
 % Create a legend for the entire tiled layout
@@ -351,13 +385,13 @@ figure();
 tiledlayout(2, 2)
 sgtitle(['Effect of removing ', num2str(100*(1-P)), ...
     '% of epochs (', num2str(size(EMG_P3, 3) - K), ' out of ', ...
-    num2str(size(EMG_P3, 3)), ') with high error values - Pressure 3 bar']);
+    num2str(size(EMG_P3, 3)), ') with high error values - Pressure 3 bar, ', epoch_base]);
 for i = 1:size(EMG_P3, 1)-6
     nexttile; hold on;
 
     h3 = plot(X_P3, 1e3*squeeze(EMG_P3_err_sorted(i, :, K+1:end))', 'Color', 0.5*[1, 1, 1], 'LineWidth', 0.5);
 
-    h1 = plot(X_P3, 1e3*squeeze(EMG_P3_selected(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5);
+    h1 = plot(X_P3, 1e3*squeeze(EMG_P3_selected(i, :, :))', 'Color', All_colours.light_orange, 'LineWidth', 0.5, 'LineStyle', '--');
 
     h2 = plot(X_P3, 1e3*mean(EMG_P3_selected(i, :, :), 3), 'Color', All_colours.dark_orange, 'LineWidth', 4);
 
@@ -367,9 +401,9 @@ for i = 1:size(EMG_P3, 1)-6
     
     hold off;
 
-    title(muscles_names{i})
+    title(Names{i})
     xlabel('Cycle [%]')
-    ylabel('mV')
+    ylabel('EMG Activity [\muV]')
 end
 
 % Create a legend for the entire tiled layout
@@ -383,13 +417,13 @@ figure();
 tiledlayout(2, 2)
 sgtitle(['Effect of removing ', num2str(100*(1-P)), ...
     '% of epochs (', num2str(size(EMG_P6, 3) - K), ' out of ', ...
-    num2str(size(EMG_P6, 3)), ') with high error values - Pressure 6 bar']);
+    num2str(size(EMG_P6, 3)), ') with high error values - Pressure 6 bar, ', epoch_base]);
 for i = 1:size(EMG_P6, 1)-6
     nexttile; hold on;
 
     h3 = plot(X_P6, 1e3*squeeze(EMG_P6_err_sorted(i, :, K+1:end))', 'Color', 0.5*[1, 1, 1], 'LineWidth', 0.5);
 
-    h1 = plot(X_P6, 1e3*squeeze(EMG_P6_selected(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5);
+    h1 = plot(X_P6, 1e3*squeeze(EMG_P6_selected(i, :, :))', 'Color', All_colours.light_green, 'LineWidth', 0.5, 'LineStyle', '--');
 
     h2 = plot(X_P6, 1e3*mean(EMG_P6_selected(i, :, :), 3), 'Color', All_colours.dark_green, 'LineWidth', 4);
 
@@ -399,15 +433,357 @@ for i = 1:size(EMG_P6, 1)-6
     
     hold off;
 
-    title(muscles_names{i})
+    title(Names{i})
     xlabel('Cycle [%]')
-    ylabel('mV')
+    ylabel('EMG Activity [\muV]')
 end
 
 % Create a legend for the entire tiled layout
 lgd = legend([h1(1), h2, h3(1), h4, h5], ...
     {'Selected Epochs', 'Mean of Selected Epochs', 'Removed Epochs', 'Mean of All Epoch', 'Median of All Epochs'}, 'Orientation', 'horizontal');
 lgd.Layout.Tile = 'south'; % Position the legend at the bottom
+
+
+%% look deeper into the removed epochs
+
+P = 0.9; % keep P*100 percent of epochs
+
+[epoch_numbers, removed_epochs_total] = ...
+    removed_epochs_count(data, P, P1, P3, P6, ...
+    err_P1_flx_sorted, err_P3_flx_sorted, err_P6_flx_sorted);
+epoch_numbers(bad_trials_EEG_based) = [];
+removed_epochs_total(:, bad_trials_EEG_based) = [];
+
+
+%% plot number of removed epochs
+
+% define the colors for the bar plot
+colors = zeros(length(data), 3);
+colors(P1.trials, :) = repmat(All_colours.light_blue, numel(P1.trials), 1);
+colors(P3.trials, :) = repmat(All_colours.light_orange, numel(P3.trials), 1);
+colors(P6.trials, :) = repmat(All_colours.light_green, numel(P6.trials), 1);
+colors(bad_trials_EEG_based, :) = [];
+
+%% main plot
+h = tiledlayout(4,3);
+title(h, epoch_base)
+x = 1:length(epoch_numbers);
+for i = 1:12
+    switch i
+        case 1
+            muscle_m = 1;
+        case 4
+            muscle_m = 2;
+        case 7
+            muscle_m = 3;
+        case 10
+            muscle_m = 4;
+    end
+
+    nexttile(i);
+
+    if mod(i, 3) == 1
+        P = 0.9;
+    elseif mod(i, 3) == 2
+        P = 0.8;
+    else
+        P = 0.6;
+    end
+
+    [epoch_numbers, removed_epochs_total] = ...
+        removed_epochs_count(data, P, P1, P3, P6, ...
+        err_P1_flx_sorted, err_P3_flx_sorted, err_P6_flx_sorted);
+
+    epoch_numbers(bad_trials_EEG_based) = [];
+    removed_epochs_total(:, bad_trials_EEG_based) = [];
+
+    h1 = bar(x, epoch_numbers, 'EdgeColor', 'none'); 
+    xlabel('Trials')
+    ylabel('Epoch Count')
+    h1.FaceColor = 'flat';
+    h1.CData = colors;
+    
+    hold on;
+    
+    h2 = bar(x, removed_epochs_total(muscle_m, :), 'EdgeColor', 'none');
+    h2.FaceColor = 'flat';
+    h2.CData = repmat(0.2*[1 1 1], numel(removed_epochs_total(1,:)), 1);
+    
+    xlim([1, numel(epoch_numbers)])
+    ylim([0 max(epoch_numbers)+1])
+    title([Names{muscle_m}, ', ', num2str(100*(1-P)), '% removal '])
+end
+
+
+%% Look at the removed epochs in detail in each pressure condition
+% define the colors for the bar plot without removing bad-trials ids 
+colors = zeros(length(data), 3);
+colors(P1.trials, :) = repmat(All_colours.light_blue, numel(P1.trials), 1);
+colors(P3.trials, :) = repmat(All_colours.light_orange, numel(P3.trials), 1);
+colors(P6.trials, :) = repmat(All_colours.light_green, numel(P6.trials), 1);
+
+% P1
+figure();
+h = tiledlayout(4,3);
+title(h, [epoch_base, ', Pressure 1'])
+x = 1:length(P1.trials);
+for i = 1:12
+    switch i
+        case 1
+            muscle_m = 1;
+        case 4
+            muscle_m = 2;
+        case 7
+            muscle_m = 3;
+        case 10
+            muscle_m = 4;
+    end
+
+    nexttile(i);
+
+    if mod(i, 3) == 1
+        P = 0.9;
+    elseif mod(i, 3) == 2
+        P = 0.8;
+    else
+        P = 0.6;
+    end
+
+    [epoch_numbers, removed_epochs_total] = ...
+        removed_epochs_count(data, P, P1, P3, P6, ...
+        err_P1_flx_sorted, err_P3_flx_sorted, err_P6_flx_sorted);
+
+
+    h1 = bar(x, epoch_numbers(P1.trials), 'EdgeColor', 'none'); 
+    xlabel('Trials')
+    ylabel('Epoch Count')
+    h1.FaceColor = 'flat';
+    h1.CData = colors(P1.trials, :);
+    
+    hold on;
+    
+    h2 = bar(x, removed_epochs_total(muscle_m, P1.trials), 'EdgeColor', 'none');
+    h2.FaceColor = 'flat';
+    h2.CData = repmat(0.2*[1 1 1], numel(removed_epochs_total(1,P1.trials)), 1);
+    
+    xlim([1, numel(epoch_numbers(P1.trials))])
+    ylim([0 max(epoch_numbers(P1.trials))+1])
+    title([Names{muscle_m}, ', ', num2str(100*(1-P)), '% removal '])
+end
+
+
+% P3
+figure();
+h = tiledlayout(4,3);
+title(h, [epoch_base, ', Pressure 3'])
+x = 1:length(P3.trials);
+for i = 1:12
+    switch i
+        case 1
+            muscle_m = 1;
+        case 4
+            muscle_m = 2;
+        case 7
+            muscle_m = 3;
+        case 10
+            muscle_m = 4;
+    end
+
+    nexttile(i);
+
+    if mod(i, 3) == 1
+        P = 0.9;
+    elseif mod(i, 3) == 2
+        P = 0.8;
+    else
+        P = 0.6;
+    end
+
+    [epoch_numbers, removed_epochs_total] = ...
+        removed_epochs_count(data, P, P1, P3, P6, ...
+        err_P1_flx_sorted, err_P3_flx_sorted, err_P6_flx_sorted);
+
+
+    h1 = bar(x, epoch_numbers(P3.trials), 'EdgeColor', 'none'); 
+    xlabel('Trials')
+    ylabel('Epoch Count')
+    h1.FaceColor = 'flat';
+    h1.CData = colors(P3.trials, :);
+    
+    hold on;
+    
+    h2 = bar(x, removed_epochs_total(muscle_m, P3.trials), 'EdgeColor', 'none');
+    h2.FaceColor = 'flat';
+    h2.CData = repmat(0.2*[1 1 1], numel(removed_epochs_total(1,P3.trials)), 1);
+    
+    xlim([1, numel(epoch_numbers(P3.trials))])
+    ylim([0 max(epoch_numbers(P3.trials))+1])
+    title([Names{muscle_m}, ', ', num2str(100*(1-P)), '% removal '])
+end
+
+
+% P6
+figure();
+h = tiledlayout(4,3);
+title(h, [epoch_base, ', Pressure 6'])
+x = 1:length(P6.trials);
+for i = 1:12
+    switch i
+        case 1
+            muscle_m = 1;
+        case 4
+            muscle_m = 2;
+        case 7
+            muscle_m = 3;
+        case 10
+            muscle_m = 4;
+    end
+
+    nexttile(i);
+
+    if mod(i, 3) == 1
+        P = 0.9;
+    elseif mod(i, 3) == 2
+        P = 0.8;
+    else
+        P = 0.6;
+    end
+
+    [epoch_numbers, removed_epochs_total] = ...
+        removed_epochs_count(data, P, P1, P3, P6, ...
+        err_P1_flx_sorted, err_P3_flx_sorted, err_P6_flx_sorted);
+
+
+    h1 = bar(x, epoch_numbers(P6.trials), 'EdgeColor', 'none'); 
+    xlabel('Trials')
+    ylabel('Epoch Count')
+    h1.FaceColor = 'flat';
+    h1.CData = colors(P6.trials, :);
+    
+    hold on;
+    
+    h2 = bar(x, removed_epochs_total(muscle_m, P6.trials), 'EdgeColor', 'none');
+    h2.FaceColor = 'flat';
+    h2.CData = repmat(0.2*[1 1 1], numel(removed_epochs_total(1,P6.trials)), 1);
+    
+    xlim([1, numel(epoch_numbers(P6.trials))])
+    ylim([0 max(epoch_numbers(P6.trials))+1])
+    title([Names{muscle_m}, ', ', num2str(100*(1-P)), '% removal '])
+end
+
+
+%% Deeper look into the EMG across the course of experiment
+% Calculate RMS
+for i = 1:length(EMG_Preprocessed)
+
+    if ~isempty(EMG_Preprocessed{1, i}.without_outlier_removal.value)
+        EMG_Preprocessed{1, i}.without_outlier_removal.RMS = [];
+        l = size(EMG_Preprocessed{1, i}.without_outlier_removal.value, 3);
+        for j = 1:l
+            EMG = EMG_Preprocessed{1, i}.without_outlier_removal.value(1:4, :, j);
+            EMG_Preprocessed{1, i}.without_outlier_removal.RMS = cat(2, ...
+                EMG_Preprocessed{1, i}.without_outlier_removal.RMS, ...
+                sqrt(mean((1e3*EMG).^2, 2)));
+        end
+    end
+
+end
+
+% define a new vector to store trials id for each pressure
+EMG_RMS_pressure = zeros(1, length(EMG_Preprocessed)); 
+EMG_RMS_pressure(1, P1.trials) = 1;
+EMG_RMS_pressure(1, P3.trials) = 3;
+EMG_RMS_pressure(1, P6.trials) = 6;
+% remove the bad_trials_EEG_based indexes
+EMG_RMS_pressure(bad_trials_EEG_based) = [];
+
+
+%% Plot the results
+figure();
+h = tiledlayout(2,2);
+title(h, epoch_base)
+ylim_max = [];
+for i = 1:4
+    nexttile(i); hold on;
+    % P1
+    x = find(EMG_RMS_pressure == 1);
+    y = [];
+    y_std = [];
+    for j = 1:length(P1.trials)
+        y = cat(2, y, mean(EMG_Preprocessed{1, P1.trials(j)}.without_outlier_removal.RMS(i, :)));
+        y_std = cat(2, y_std, std(EMG_Preprocessed{1, P1.trials(j)}.without_outlier_removal.RMS(i, :)));
+    end
+    h1 = errorbar(x, y, y_std, 'o', 'Color', All_colours.dark_blue, 'MarkerSize', 5,...
+        'MarkerEdgeColor', 'none', 'MarkerFaceColor', All_colours.dark_blue);
+
+    % P3
+    x = find(EMG_RMS_pressure == 3);
+    y = [];
+    y_std = [];
+    for j = 1:length(P3.trials)
+        y = cat(2, y, mean(EMG_Preprocessed{1, P3.trials(j)}.without_outlier_removal.RMS(i, :)));
+        y_std = cat(2, y_std, std(EMG_Preprocessed{1, P3.trials(j)}.without_outlier_removal.RMS(i, :)));
+    end
+    h2 = errorbar(x, y, y_std, 'o', 'Color', All_colours.dark_orange, 'MarkerSize', 5,...
+        'MarkerEdgeColor', 'none', 'MarkerFaceColor', All_colours.dark_orange);
+
+    % P6
+    x = find(EMG_RMS_pressure == 6);
+    y = [];
+    y_std = [];
+    for j = 1:length(P6.trials)
+        y = cat(2, y, mean(EMG_Preprocessed{1, P6.trials(j)}.without_outlier_removal.RMS(i, :)));
+        y_std = cat(2, y_std, std(EMG_Preprocessed{1, P6.trials(j)}.without_outlier_removal.RMS(i, :)));
+    end
+    h3 = errorbar(x, y, y_std, 'o', 'Color', All_colours.dark_green, 'MarkerSize', 5,...
+        'MarkerEdgeColor', 'none', 'MarkerFaceColor', All_colours.dark_green);
+    
+    ylimit = get(gca, 'ylim');
+    ylim_max = cat(2, ylim_max, ylimit(2));
+
+    xlim([1, length(EMG_RMS_pressure)]);
+    xlabel('Trials')
+    ylabel('EMG RMS')
+    title(Names{i})
+end
+
+% % Set the maximum y-axis limits for all tiles
+% allAxes = findall(h, 'Type', 'axes');
+% set(allAxes, 'YLim', [0 max(ylim_max)]); 
+
+% Create a legend for the entire tiled layout
+lgd = legend([h1, h2, h3], {'P1', 'P3', 'P6'}, 'Orientation', 'horizontal');
+lgd.Layout.Tile = 'south'; % Position the legend at the bottom
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -449,7 +825,7 @@ for i = 1:size(EMG_P1, 1)-6
 
     hold off
 
-    title(muscles_names{i})
+    title(Names{i})
     xlabel('Cycle [%]')
     ylabel('mV')
 end

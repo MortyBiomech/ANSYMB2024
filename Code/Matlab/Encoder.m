@@ -1,19 +1,19 @@
-clc; clear; close all;
+clc; clear; 
 
 %% Add LSL library
 addpath(genpath('C:\Morteza\LSL\liblsl-Matlab'))
 
 %% Setting the variables
-Num_trials = 62; % How many times should the (1, 3, 6 bar) conditions repeat; 
+Num_trials = 80; % How many times should the (1, 3, 6 bar) conditions repeat; 
 Num_Conditions = 3; % Number of conditions (1, 3, 6 bar)
 
-up_lim = 15; % Upper limit of the movement
-lo_lim = -60; % Lower limit of the movement
-freq_avg = 0.6; % Frequency of the reference movement
+up_lim = -5; % Upper limit of the movement
+lo_lim = -85; % Lower limit of the movement
+freq_avg = 0.5; % Frequency of the reference movement
 
 %% defining the Arduino
 disp('Defining the Arduino...');
-a = arduino('COM3','Mega2560','Libraries','rotaryEncoder')
+a = arduino('COM12','Mega2560','Libraries','rotaryEncoder')
 disp('Defining the Encoder...');
 encoder = rotaryEncoder(a,'D2','D3',1000)
 
@@ -24,7 +24,7 @@ lib = lsl_loadlib();
 % make a new stream outlet
 disp('Creating a new streaminfo...');
 info = lsl_streaminfo(lib,'Encoder_Pressure_Preference_Force', ...
-    'Exp_data',6,0,'cf_float32', 'myuid123456');
+    'Exp_data',7,0,'cf_float32', 'myuid123456');
 disp('Opening an outlet...');
 outlet = lsl_outlet(info);
 % send data into the outlet, sample by sample
@@ -33,6 +33,7 @@ disp('Now transmitting data...');
 %% Setting the initial position
 resetCount(encoder); Pressure = 0; Preference = 0; mappedPressure = 0;
 auditory_input = 0;
+score_press = 0;
 
 %% Read the data from the encoder
 Angle = []; Time_enc = []; time = 0; StartSpot = 0; Up_lim = []; Lo_lim = []; 
@@ -120,7 +121,7 @@ while true
     % axis([StartSpot, (time+5), 0, 3])
 
     Encoder_Pressure_Preference_Force = ...
-        [angle, ref_trj, mappedPressure, Preference, force, auditory_input];
+        [angle, ref_trj, mappedPressure, Preference, force, auditory_input, score_press];
     outlet.push_sample(Encoder_Pressure_Preference_Force);
 
 end

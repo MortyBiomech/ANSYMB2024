@@ -1,0 +1,7 @@
+AMT 102-V encoder
+battery ? v --> Gens
+micro-controller --> Arduino (high clock freq-analouge to digital pins) ask Marc
+Labview for plotting online (it may be too slow with Matlab)
+cables
+USB for Arduino
+voltages of the sensors

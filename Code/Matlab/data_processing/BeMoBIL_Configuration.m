@@ -142,8 +142,11 @@ function bemobil_config = BeMoBIL_Configuration(data_path)
     % right) that have a corresponding 10-20 electrode and enter them here. leave empty if using standard locations!
     
     % bemobil_config.warping_channel_names = {3,'FTT9h';45,'FTT10h';84,'AFz';87,'Cz'};
-    bemobil_config.warping_channel_names = [];
-    
+    bemobil_config.warping_channel_names = ...
+        [0.489588,     -16.07234,     -5.174031,    0.08010526,   ...
+        0.004286417,     -1.572696,      100.3651,      92.60424, ...
+        104.8164];
+
     % dipfit settings
     bemobil_config.residualVariance_threshold = 100;
     bemobil_config.do_remove_outside_head = 'off';

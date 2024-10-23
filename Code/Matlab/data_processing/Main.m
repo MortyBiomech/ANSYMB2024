@@ -5,13 +5,14 @@ clear
 study_path = 'C:\Morteza\MyProjects\ANSYMB2024\data\';
 processing_path = 'C:\Morteza\MyProjects\ANSYMB2024\Code\Matlab\data_processing\';
 addpath(genpath('C:\Morteza\MyProjects\ANSYMB2024'))
+addpath(genpath('C:\Morteza\LSL\xdf-Matlab-master'))
 
 %% Add important paths
 addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127')
 addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127\fileio')
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 5;
+subject_id = 4;
 rawdata_path = [study_path, '0_source_data\'];
 output = runs_concatenated(subject_id, rawdata_path);
 
@@ -65,8 +66,7 @@ eegInfo     = [];
 % eegInfo.coordsystem.EEGCoordinateSystem     = 'enter the name of your coordinate system'; % only needed when you share eloc
 % eegInfo.coordsystem.EEGCoordinateUnits      = 'enter the unit of your coordinate system'; % only needed when you share eloc
 % eegInfo.coordsystem.EEGCoordinateSystemDescription = 'enter description of your coordinate system'; % only needed when you share eloc
-eegInfo.eeg.SamplingFrequency               = 500; % nominal sampling frequency  
-                               
+eegInfo.eeg.SamplingFrequency               = 500; % nominal sampling frequency                            
 
 
 %% Import data
@@ -77,8 +77,7 @@ studyFolder   = study_path(1:end-1);
 
 % replace with names of your sessions (if there are no multiple sessions, 
 % remove confg.ses and the session loop in the following)
-sessionNames  = {'S001', 'S002', 'S003', 'S004'};             
-
+sessionNames  = {'S001', 'S002', 'S003', 'S004', 'S005'};             
 
 % loop over sessions 
 for session = 1:length(sessionNames)
@@ -142,7 +141,6 @@ for session = 1:length(sessionNames)
         'eeg_metadata', eegInfo);
 end
 
-
 fclose all;
 
 
@@ -159,7 +157,7 @@ bemobil_bids2set(config);
 bemobil_config = BeMoBIL_Configuration(study_path);
 
 % enter all subjects to process here (you can split it up in more MATLAB instances if you have more CPU power and RAM)
-subjects = 5; 
+subjects = 10; 
 
 % set to 1 if all files should be computed, independently of whether they are present on disk or not
 force_recompute = 0; 
@@ -223,98 +221,63 @@ for subject = subjects
     %% Define and Add events
     % Compute latency values
     
-    % start_beep event
+    % start_beep event (first single beep)
     start_beep = find(diff(All_Experiment(6, :)) == 1);
-    start_beep(1:6) = [];
-    start_beep_time_Expdata = All_Experiment_time(start_beep);
+    start_beep = reshape(start_beep, 2, []);
+    start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
     start_beep_indx_EEG = ...
         knnsearch(All_EEG_time', start_beep_time_Expdata');
     start_beep_latency_EEG = EEG.times(start_beep_indx_EEG); % time unit: milisecond
     
-    % pressure_change event
-    pressure_change_time_Expdata = All_Experiment_time(start_beep) - 2;
+
+    % pressure_change event (2s after first single beep)
+    pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
     pressure_change_indx_EEG = ...
         knnsearch(All_EEG_time', pressure_change_time_Expdata');
     pressure_change_latency_EEG = EEG.times(pressure_change_indx_EEG); % time unit: milisecond
+
+
+    % start_move event (second single beep, 2s after pressure change)
+    start_move = find(diff(All_Experiment(6, :)) == 1);
+    start_move = reshape(start_move, 2, []);
+    start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+    start_move_indx_EEG = ...
+        knnsearch(All_EEG_time', start_move_time_Expdata');
+    start_move_latency_EEG = EEG.times(start_move_indx_EEG); % time unit: milisecond
     
-    % finish_beep event
-    finish_beep = find(diff(All_Experiment(6, :)) == -1);
-    finish_beep(1:6) = [];
+
+    % finish_beep event (20s after start_move event, double beep to stop movement)
+    finish_beep = find(diff(All_Experiment(6, :)) == -2);
     finish_beep_time_Expdata = All_Experiment_time(finish_beep);
     finish_beep_indx_EEG = ...
         knnsearch(All_EEG_time', finish_beep_time_Expdata');
     finish_beep_latency_EEG = EEG.times(finish_beep_indx_EEG); % time unit: milisecond
     
-    % Trial_Start event (500ms before pressure_change for baseline removal)
-    Trial_Start_time_Expdata = All_Experiment_time(start_beep) - 2.5;
-    Trial_Start_indx_EEG = ...
-        knnsearch(All_EEG_time', Trial_Start_time_Expdata');
-    Trial_Start_latency_EEG = EEG.times(Trial_Start_indx_EEG); % time unit: milisecond
 
-    % Trial_End event (500ms after finish_beep as subject were asked to
-    % stop moving their knee and evaluate the task after hearing the
-    % finish-beep sound (double-beeps).
-    Trial_End_time_Expdata = All_Experiment_time(finish_beep) + 0.5;
-    Trial_End_indx_EEG = ...
-        knnsearch(All_EEG_time', Trial_End_time_Expdata');
-    Trial_End_latency_EEG = EEG.times(Trial_End_indx_EEG); % time unit: milisecond
+    % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
+    score_press = find(diff(All_Experiment(7, :)) > 0);
+    score_press_time_Expdata = All_Experiment_time(score_press);
+    score_press_indx_EEG = ...
+        knnsearch(All_EEG_time', score_press_time_Expdata');
+    score_press_latency_EEG = EEG.times(score_press_indx_EEG); % time unit: milisecond
 
-
-
-    % Preallocate the memory for score_change_latency_EEG
-    score_press_latency_EEG = zeros(1, numel(start_beep));
-    
-    % Create an interpolation function for EEG times
-    eeg_time_interpolant = griddedInterpolant(All_EEG_time, 1:numel(All_EEG_time), 'nearest');
-    
-    for i = 1:numel(start_beep)-1
-        % Get the segment of Expdata_temp and Exptime_temp
-        Expdata_temp = All_Experiment(4, finish_beep(i):start_beep(i+1));
-        Exptime_temp = All_Experiment_time(1, finish_beep(i):start_beep(i+1));
-    
-        % Find the index where score change occurs
-        score_press_indx = find(abs(Expdata_temp - Expdata_temp(1)) >= 1, 1);
-    
-        % This should be changed (Add the moment of pressing score buttons)
-        if ~isempty(score_press_indx) % score changed
-            score_press_time_Expdata = Exptime_temp(score_press_indx);
-        else % score didn't change, assume 2 seconds after finish_beep
-            score_press_time_Expdata = All_Experiment_time(finish_beep(i)) + 2;
-        end
-    
-        % Use the interpolation function to find the closest EEG index
-        score_press_indx_EEG = round(eeg_time_interpolant(score_press_time_Expdata));
-    
-        % Calculate latency
-        score_press_latency_EEG(i) = EEG.times(score_press_indx_EEG);
-    end
-    
-    % for the last trial
-    % Get the segment of Expdata_temp and Exptime_temp
-    Expdata_temp = All_Experiment(4, finish_beep(end):end);
-    Exptime_temp = All_Experiment_time(1, finish_beep(end):end);
-    
-    % Find the index where score change occurs
-    score_press_indx = find(abs(Expdata_temp - Expdata_temp(1)) >= 1, 1);
-    
-    if ~isempty(score_press_indx) % score was changed
-        score_press_time_Expdata = Exptime_temp(score_press_indx);
-    else % score wasn't change, assume 2 seconds after finish_beep
-        score_press_time_Expdata = All_Experiment_time(finish_beep(end)) + 2;
-    end
-    
-    % Use the interpolation function to find the closest EEG index
-    score_press_indx_EEG = round(eeg_time_interpolant(score_press_time_Expdata));
-    
-    % Calculate latency
-    score_press_latency_EEG(end) = EEG.times(score_press_indx_EEG);
-    
     
     %% Define and Add Events
+    if subject_id == 10
+        no_PAM_trials = [1:6; 103:108; 109:114; 205:210];
+        familiarization_trials = 7:12;
+    end
     % Import Trials information
-    Trials = cell(1, numel(start_beep));
+    Trials = cell(1, size(start_beep,2));
     for i = 1:numel(Trials)
-        Trials{1, i}.Pressure = All_Experiment(3, start_beep(1, i));
+        if ismember(i, no_PAM_trials)
+            Trials{1, i}.Description = 'No_PAM';
+        elseif ismember(i, familiarization_trials)
+            Trials{1, i}.Description = 'Familiarizattion';
+        else
+            Trials{1, i}.Description = 'Experiment';
+        end
+        Trials{1, i}.Pressure = All_Experiment(3, start_beep(2, i));
         if i ~= numel(Trials)
             Trials{1, i}.Score = All_Experiment(4, start_beep(1, i+1));
         else
@@ -322,23 +285,32 @@ for subject = subjects
         end
     end
     
-    % Add pressure change events
-    type = repmat({'PC_Pressure_Change'}, 1, numel(pressure_change_latency_EEG));
-    latency = pressure_change_latency_EEG;
+    
+    % make events description
     desc1 = cell(1, numel(pressure_change_latency_EEG)); % {P(i-1), P(i), Trial}
     for i = 1:length(desc1)
         if i~=1
             desc1{1, i} = {Trials{1, i-1}.Pressure, Trials{1, i}.Pressure, i};
         else
-            indx_temp = knnsearch(All_Experiment_time', pressure_change_time_Expdata(1) - 0.1);
+            indx_temp = knnsearch(All_Experiment_time', pressure_change_time_Expdata(1) - 1);
             desc1{1, 1} = {All_Experiment(3, indx_temp), Trials{1, i}.Pressure, i};
         end
     end
-    desc = desc1;
     
+
     % Add start beep events
-    type = cat(2, type, repmat({'SB_Start_Beep'}, 1, numel(start_beep)));
-    latency = cat(2, latency, start_beep_latency_EEG);
+    type = repmat({'SB_Start_Beep'}, 1, size(start_beep,2));
+    latency = start_beep_latency_EEG;
+    desc = desc1;
+
+    % Add pressure change events
+    type = cat(2, type, repmat({'PC_Pressure_Change'}, 1, numel(pressure_change_latency_EEG)));
+    latency = cat(2, latency, pressure_change_latency_EEG);
+    desc = cat(2, desc, desc1);
+
+    % Add start move events
+    type = cat(2, type, repmat({'SM_Start_Move'}, 1, size(start_beep,2)));
+    latency = cat(2, latency, start_move_latency_EEG);
     desc = cat(2, desc, desc1);
     
     % Add finish beep events
@@ -346,39 +318,45 @@ for subject = subjects
     latency = cat(2, latency, finish_beep_latency_EEG);
     desc = cat(2, desc, desc1);
 
-    % Add score change events
-    type = cat(2, type, repmat({'SP_Score_Press'}, 1, numel(score_press_latency_EEG)));
-    latency = cat(2, latency, score_press_latency_EEG);
+    % New description including the scores of current and previous trials
     desc2 = cell(1, numel(score_press_latency_EEG)); % {P(i-1), P(i), Trial}
     for i = 1:length(desc2)
         if i~=1
             desc2{1, i} = {Trials{1, i-1}.Pressure, Trials{1, i}.Pressure,Trials{1, i-1}.Score,Trials{1, i}.Score, i};
         else
-            indx_temp = knnsearch(All_Experiment_time', pressure_change_time_Expdata(1) - 0.1);
+            indx_temp = knnsearch(All_Experiment_time', pressure_change_time_Expdata(1) - 1);
             desc2{1, 1} = {All_Experiment(3, indx_temp), Trials{1, i}.Pressure, All_Experiment(4, indx_temp), Trials{1, i}.Score, i};
         end
     end
+
+    % Add score press events
+    type = cat(2, type, repmat({'SP_Score_Press'}, 1, numel(score_press_latency_EEG)));
+    latency = cat(2, latency, score_press_latency_EEG);
     desc = cat(2, desc, desc2);
 
     % Add Trial Start events
-    type = cat(2, type, repmat({'TS_Trial_Start'}, 1, numel(Trial_Start_latency_EEG)));
-    latency = cat(2, latency, Trial_Start_latency_EEG);
+    type = cat(2, type, repmat({'TS_Trial_Start'}, 1, numel(start_beep_latency_EEG)));
+    latency = cat(2, latency, start_beep_latency_EEG - 2); % 2ms before (one sample)
     desc = cat(2, desc, desc1);
 
     % Add Trial End events
-    type = cat(2, type, repmat({'TE_Trial_End'}, 1, numel(Trial_End_latency_EEG)));
-    latency = cat(2, latency, Trial_End_latency_EEG);
+    type = cat(2, type, repmat({'TE_Trial_End'}, 1, numel(score_press_latency_EEG)));
+    latency = cat(2, latency, score_press_latency_EEG + 2); % 2ms after (one sample)
     desc = cat(2, desc, desc1);
 
     
 
-    %% Write the TS_PC_SB_FB_TE_SP_event.txt file
+    %% Write the TS_SB_PC_SM_FB_SP_TE_event.txt file
     % TS: Trial Start
+    % SB: Start Beep
+    % after 2s 
     % PC: Pressure Change
-    % SB: Sstart Beep
+    % after 2s
+    % SM: Start Move
+    % after 20s
     % FB: Finish Beep
-    % TE: Trial End
     % SP: Score Press
+    % TE: Trial End
 
     folder = [processing_path, 'Events', ...
         filesep, 'sub-', num2str(subject_id)];
@@ -389,7 +367,7 @@ for subject = subjects
     end
 
     % File name
-    filename = fullfile(folder, 'events.txt');
+    filename = fullfile(folder, 'events_basic.txt');
     
     % Open the file for writing
     fileID = fopen(filename, 'w');
@@ -426,20 +404,19 @@ for subject = subjects
     % it is stongly recommended to remove these segments because they may contain strong artifacts that confuse channel
     % detection and AMICA
     
-    % this example removes everything before the first and after the last event with a buffer of 1 second
     
     allevents = {EEG.event.type}';
     
-    removeindices = zeros(numel(start_beep)+1 ,2);
+    removeindices = zeros(size(start_beep,2)+1 ,2);
     % remove from start to first event
-    removeindices(1, :) = [0 EEG.event(1).latency-50]; 
+    removeindices(1, :) = [0 EEG.event(1).latency]; 
 
     % add more removeIndices here for pauses or itnerruptions of the 
     % experiment if they have markers or you know their indices in the data
-    for i = 1:numel(start_beep)-1
-        removeindices(i+1, :) = [EEG.event(6*i-1).latency+50 EEG.event(6*i+1).latency-50];
+    for i = 1:size(start_beep,2)-1
+        removeindices(i+1, :) = [EEG.event(7*i).latency EEG.event(7*i+1).latency];
     end
-    removeindices(end, :) = [EEG.event(end-1).latency+50 EEG.pnts]; % remove from last event to the end
+    removeindices(end, :) = [EEG.event(end).latency EEG.pnts]; % remove from last event to the end
     
 
     %%
@@ -468,21 +445,258 @@ for subject = subjects
     print(gcf,fullfile(input_filepath,[bemobil_config.filename_prefix num2str(subject) '_raw-full_EEG.png']),'-dpng')
     close
 
-    %% Add other events like flexion and extension
+    %% Add other flexion/extension start/end events
     % Important Note: before rejecting the non-exp segments you must add
     % the flexion/Extension start events
 
-    % cd 'C:\Morteza\Analysis\ANSYMB2024\data\Trials_info\sub-7'
-    % load('subj_7_Trials_encoder_events.mat')
-    % cd 'C:\Morteza\Analysis\ANSYMB2024\Code\data_processing'
+    % Use peak selection app to find the flexion and extension start events
+    output_peaks = find_peaks_and_select_events(output);
+
+    start_beep = start_beep(1, :);
+    start_move = start_move(2, :);
+    XLimits = output_peaks.XLimits;
+
+    trial_pks_high_peaks = output_peaks.trial_pks_high_peaks;
+    trial_locs_high_peaks = output_peaks.trial_locs_high_peaks;
+
+    trial_pks_low_peaks = output_peaks.trial_pks_low_peaks;
+    trial_locs_low_peaks = output_peaks.trial_locs_low_peaks;
+
+    N_Trials = output_peaks.N_Trials;
+
+    Trials_encoder_events = output_peaks.Trials_encoder_events;
+
+    for i = 1:numel(Trials_encoder_events)
+        Trials_encoder_events{1, i}.Description = Trials{1, i}.Description;
+        Trials_encoder_events{1, i}.Pressure = Trials{1, i}.Pressure;
+        Trials_encoder_events{1, i}.Score = Trials{1, i}.Score;
+    end
+
+
+    %% run the app to select unwanted peaks 
+    % find_flexion_extension_events
+
+
+    %% Add flexion and extension indexes to Trials_encoder_events structure (based on Exp stream indexes)
+    for i = 1:length(Trials_encoder_events)
+        
+        if Trials_encoder_events{1, i}.high_peaks.index(1) > ...
+                Trials_encoder_events{1, i}.low_peaks.index(1)
+            flag1 = 1;
+        else
+            flag1 = 0;
+        end
+    
+        if Trials_encoder_events{1, i}.high_peaks.index(end) > ...
+                Trials_encoder_events{1, i}.low_peaks.index(end)
+            flag2 = 1;
+        else
+            flag2 = 0;
+        end
+
+        
+        if flag1 == 1 && flag2 == 1 % case 1 - should not happen!
+            
+            Trials_encoder_events{1, i}.Case = 1;
+
+            Trials_encoder_events{1, i}.low_peaks.index(1) = [];
+            Trials_encoder_events{1, i}.low_peaks.time(1) = [];
+            Trials_encoder_events{1, i}.low_peaks.value(1) = [];
+
+            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index(1:end-1);
+            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+
+            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index;
+            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+    
+        elseif flag1 == 1 && flag2 == 0 % case 2 - should not happen!
+            
+            Trials_encoder_events{1, i}.Case = 2;
+
+            Trials_encoder_events{1, i}.low_peaks.index(1) = [];
+            Trials_encoder_events{1, i}.low_peaks.time(1) = [];
+            Trials_encoder_events{1, i}.low_peaks.value(1) = [];
+
+            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index;
+            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+
+            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index(1:end-1);
+            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+    
+        elseif flag1 == 0 && flag2 == 1 % case 3
+            
+            Trials_encoder_events{1, i}.Case = 3;
+
+            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index(1:end-1);
+            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+
+            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index;
+            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
 
     
+        elseif flag1 == 0 && flag2 == 0 % case 4
+            
+            Trials_encoder_events{1, i}.Case = 4;
 
+            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index;
+            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+
+            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index(1:end-1);
+            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+
+        end
+
+    end
+
+
+    save([study_path, '6_0_Trials_Info_and_Events\sub-', ...
+        num2str(subject_id), filesep, 'sub-', num2str(subject_id), ...
+        '_Trials_encoder_events.mat'], 'Trials_encoder_events', '-v7.3')
+
+
+    %% Add events to the text file to import them in EEG data (EEGLAB)
+    % Initialize variables
+    
+    n_trials = length(Trials_encoder_events);
+    event_types = {'FlxS', 'FlxE', 'ExtS', 'ExtE'};
+    event_fields = {'Flexion_Start', 'Flexion_End', 'Extension_Start', 'Extension_End'};
+    
+    % Pre-calculate total number of events to preallocate arrays
+    total_events = 0;
+    for i = 1:n_trials
+        for j = 1:numel(event_fields)
+            total_events = total_events + numel(Trials_encoder_events{1, i}.(event_fields{j}));
+        end
+    end
+    
+    % Preallocate arrays for efficiency
+    all_event_times_Expdata = zeros(total_events, 1);
+    all_event_labels = cell(total_events, 1);
+    all_descs = cell(total_events, 1); 
+    trial_indices = zeros(total_events, 1);
+    
+    idx = 1;
+    for i = 1:n_trials
+        for j = 1:numel(event_fields)
+            event_field = event_fields{j};
+            event_label = event_types{j};
+            
+            event_times = All_Experiment_time(Trials_encoder_events{1, i}.(event_field));
+            n_events = numel(event_times);
+            
+            if n_events > 0
+                range = idx:(idx + n_events - 1);
+                all_event_times_Expdata(range) = event_times';
+                all_event_labels(range) = repmat({event_label}, n_events, 1);
+                all_descs(range) = repmat({desc1{1, i}}, n_events, 1);
+                trial_indices(range) = i;
+                idx = idx + n_events;
+            end
+        end
+    end
+    
+    % Trim arrays to actual number of events
+    all_event_times_Expdata = all_event_times_Expdata(1:idx-1);
+    all_event_labels = all_event_labels(1:idx-1);
+    all_descs = all_descs(1:idx-1);
+    trial_indices = trial_indices(1:idx-1);
+    
+    % Map event times to EEG indices using interp1 for efficiency
+    all_event_indx_EEG = interp1(All_EEG_time, 1:length(All_EEG_time), all_event_times_Expdata, 'nearest', 'extrap');
+    all_event_latency_EEG = EEG.times(all_event_indx_EEG);
+    
+    % Organize data back into per-trial cell arrays
+    type_extended = cell(1, n_trials);
+    latency_extended = cell(1, n_trials);
+    desc_extended = cell(1, n_trials);
+    
+    for i = 1:n_trials
+        idx_trial = (trial_indices == i);
+        type_extended{i} = all_event_labels(idx_trial)';
+        latency_extended{i} = all_event_latency_EEG(idx_trial)';
+        desc_extended{i} = all_descs(idx_trial)';
+    end
+    
+
+    %% Appending to the text file
+    % Define the file paths
+    original_filename = [processing_path, 'Events\sub-', ...
+        num2str(subject_id), filesep, 'events_basic.txt'];
+    new_filename = [processing_path, 'Events\sub-', ...
+        num2str(subject_id), filesep, 'events_with_FlxExt.txt'];
+    
+    % Read the existing content of the original file
+    existing_lines = {};
+    fid = fopen(original_filename, 'r');
+    if fid ~= -1
+        while ~feof(fid)
+            line = fgetl(fid);
+            existing_lines{end + 1} = line; %#ok<SAGROW> % Add each line to the cell array
+        end
+        fclose(fid);
+    else
+        error('Failed to open the original file for reading.');
+    end
+
+
+
+    % Ensure your data arrays are column vectors
+    event_labels = all_event_labels;          % Cell array of strings, size (9730 x 1)
+    event_latency = all_event_latency_EEG';   % Numeric array, transpose to (9730 x 1)
+    event_descs = all_descs;                  % Cell array of cell arrays, size (9730 x 1)
+    
+    % Process event_descs to create a cell array of strings
+    event_descs_str = cell(size(event_descs));  % Initialize cell array for descriptions
+    for i = 1:length(event_descs)
+        % Extract the cell array of numbers for the current event
+        desc_numbers = event_descs{i};  % This is a 1x3 cell array of numbers
+    
+        % Convert each number to a string
+        desc_strings = cellfun(@num2str, desc_numbers, 'UniformOutput', false);
+    
+        % Combine the strings with underscores
+        desc_str = strjoin(desc_strings, '_');
+    
+        % Store the resulting string
+        event_descs_str{i} = desc_str;
+    end
+
+
+    % Append the new lines to the existing lines
+    for i = 1:length(event_latency)
+        new_line = sprintf('%s\t%f\t%s', event_labels{i}, event_latency(i), event_descs_str{i});
+        existing_lines{end + 1} = new_line; %#ok<SAGROW> % Add each new line to the cell array
+    end
+    
+    % Write the combined content to a new file
+    fid = fopen(new_filename, 'w');
+    if fid == -1
+        error('Failed to open the new file for writing.');
+    end
+    
+    for i = 1:length(existing_lines)
+        fprintf(fid, '%s\n', existing_lines{i});
+    end
+    
+    % Close the new file
+    fclose(fid);
+    
+    
+
+    %% Add Events with Flexion & Extension to the EEG file 
+    [EEG, eventnumbers] = pop_importevent(EEG, 'event', ...
+              new_filename, 'fields', {'type', 'latency','desc' }, ...
+              'append', 'no', 'align', NaN, 'skipline', 1, 'timeunit', 1E-3);
+
+    
     %% reject
-    EEG = eeg_eegrej(EEG, removeindices);   
+    EEG = eeg_eegrej(EEG, removeindices);
+
     
     %% processing wrappers for basic processing and AMICA
     
+    pool = gcp;
+
     % do basic preprocessing, line noise removal, and channel interpolation
 	[ALLEEG, EEG_preprocessed, CURRENTSET] = bemobil_process_all_EEG_preprocessing(subject, bemobil_config, ALLEEG, EEG, CURRENTSET, force_recompute);
 
