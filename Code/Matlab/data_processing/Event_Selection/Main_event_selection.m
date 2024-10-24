@@ -2,7 +2,8 @@ function Trials_Info = Main_event_selection(input_streams, ...
                                             EEG, ...
                                             Trials_encoder_events, ...
                                             subject_id, ...
-                                            data_path)
+                                            data_path, ...
+                                            sessions_trial_id)
 
 
     %% Extract data
@@ -10,6 +11,7 @@ function Trials_Info = Main_event_selection(input_streams, ...
     All_EMG_time = input_streams.All_EMG_time;
     All_Experiment = input_streams.All_Exp;
     All_Experiment_time = input_streams.All_Exp_time;
+
     
     %% Extract events on Experimnet streams
     start_beep = find(diff(All_Experiment(6, :)) == 1);
@@ -71,6 +73,22 @@ function Trials_Info = Main_event_selection(input_streams, ...
     % Create a cell array of size 1xN_trials to store events on all streams
     Trials_Info = repmat({final_events_structTemplate}, ...
         1, length(Trials_encoder_events));
+
+
+    %% Separate trials in four sessions
+    
+    a1 = struct('Description', [], 'Pressure', [], 'Score', [], 'Case', [], 'Trial_id', []);
+    a2 = struct('General', a1, 'Events', epochs_events);
+    % final_events_structTemplate_sessions = ...
+    %     struct('Session1', a2, 'Session2', a2, 'Session3', a2, 'Session4', a2);
+    Session1 = repmat({a2}, 1, sessions_trial_id(1));
+    Session2 = repmat({a2}, 1, sessions_trial_id(2) - sessions_trial_id(1) + 1);
+    Session3 = repmat({a2}, 1, sessions_trial_id(3) - sessions_trial_id(2) + 1);
+    Session4 = repmat({a2}, 1, sessions_trial_id(4) - sessions_trial_id(3) + 1);
+
+    % Create a cell array of size 1xN_trials to store events on all streams
+    Trials_Info_Sessions = struct('Session1', {Session1}, ...
+        'Session2', {Session2}, 'Session3', {Session3}, 'Session4', {Session4});
     
     
     %% Loop over all trials to fill the events timings and indeces

@@ -11,7 +11,7 @@ rawdata_path = [data_path, '0_source_data\'];
 
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 5;
+subject_id = 10;
 output = runs_concatenated(subject_id, rawdata_path);
 
 
@@ -54,26 +54,31 @@ filename = ['subj_', num2str(subject_id),'_Trials_encoder_events.mat'];
 load(fullfile(filepath, filename))
 
 
-%% Matlab App for marking the bad trials to exclude from post-processing
-% bad_trials_EEG_based = [];
-% mark_bad_trials_of_EEG_data
-% %%
-% filepath = [data_path, '6_0_Trials_Info_and_Events\', 'sub-', ...
-%     num2str(subject_id), filesep];
+% %% Matlab App for marking the bad trials to exclude from post-processing
+% % bad_trials_EEG_based = [];
+% % mark_bad_trials_of_EEG_data
+% % %%
+% % filepath = [data_path, '6_0_Trials_Info_and_Events\', 'sub-', ...
+% %     num2str(subject_id), filesep];
+% % filename = 'bad_trials_EEG_based.mat';
+% % save(fullfile(filepath, filename), 'bad_trials_EEG_based')
+% filepath = [data_path, '6_0_Trials_Info_and_Events', filesep, 'sub-', ...
+%     num2str(subject_id)];
 % filename = 'bad_trials_EEG_based.mat';
-% save(fullfile(filepath, filename), 'bad_trials_EEG_based')
-filepath = [data_path, '6_0_Trials_Info_and_Events', filesep, 'sub-', ...
-    num2str(subject_id)];
-filename = 'bad_trials_EEG_based.mat';
-load(fullfile(filepath, filename))
+% load(fullfile(filepath, filename))
 
 %% Find all events based on entire trials, flexions, extension, and
 % flextoflex  epochs and store in a big structure (Trials_Info.mat)
+
+% for subject 10:
+sessions_trial_id = [57, 108, 159, 210]; 
+
 Trials_Info = Main_event_selection(output, ...
                                    EEG, ...
                                    Trials_encoder_events, ...
                                    subject_id, ...
-                                   data_path);
+                                   data_path, ...
+                                   sessions_trial_id);
 
 
 %% EMG sensors id 

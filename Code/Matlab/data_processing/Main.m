@@ -322,7 +322,7 @@ for subject = subjects
     desc2 = cell(1, numel(score_press_latency_EEG)); % {P(i-1), P(i), Trial}
     for i = 1:length(desc2)
         if i~=1
-            desc2{1, i} = {Trials{1, i-1}.Pressure, Trials{1, i}.Pressure,Trials{1, i-1}.Score,Trials{1, i}.Score, i};
+            desc2{1, i} = {Trials{1, i-1}.Pressure, Trials{1, i}.Pressure, Trials{1, i-1}.Score, Trials{1, i}.Score, i};
         else
             indx_temp = knnsearch(All_Experiment_time', pressure_change_time_Expdata(1) - 1);
             desc2{1, 1} = {All_Experiment(3, indx_temp), Trials{1, i}.Pressure, All_Experiment(4, indx_temp), Trials{1, i}.Score, i};
