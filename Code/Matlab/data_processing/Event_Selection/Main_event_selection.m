@@ -13,56 +13,77 @@ function Trials_Info = Main_event_selection(input_streams, ...
     All_Experiment_time = input_streams.All_Exp_time;
 
     
-    %% Extract events on Experimnet streams
+    %% Extract events on Experiment streams & All_EEG stream (raw EEG data)
+
+    % start_beep event (first single beep)
     start_beep = find(diff(All_Experiment(6, :)) == 1);
-    start_beep(1:6) = []; % first six trials were part of the familiarization
-    start_beep_time_Expdata = All_Experiment_time(start_beep);
+    start_beep = reshape(start_beep, 2, []);
+    start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
     start_beep_indx_All_EEG = ...
         knnsearch(All_EEG_time', start_beep_time_Expdata');
     
+
+    % pressure_change event (2s after first single beep)
+    pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
+    pressure_change_indx_All_EEG = ...
+        knnsearch(All_EEG_time', pressure_change_time_Expdata');
+
+
+    % start_move event (second single beep, 2s after pressure change)
+    start_move = find(diff(All_Experiment(6, :)) == 1);
+    start_move = reshape(start_move, 2, []);
+    start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+    start_move_indx_All_EEG = ...
+        knnsearch(All_EEG_time', start_move_time_Expdata');
     
-    pressure_change_time_on_Expdata = All_Experiment_time(start_beep) - 2;
-    pressure_change_indx_on_All_EEG = ...
-        knnsearch(All_EEG_time', pressure_change_time_on_Expdata');
-    pressure_change_time_on_All_EEG = All_EEG_time(pressure_change_indx_on_All_EEG);
+
+    % finish_beep event (20s after start_move event, double beep to stop movement)
+    finish_beep = find(diff(All_Experiment(6, :)) == -2);
+    finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+    finish_beep_indx_All_EEG = ...
+        knnsearch(All_EEG_time', finish_beep_time_Expdata');
     
-    
-    finish_beep = find(diff(All_Experiment(6, :)) == -1);
-    finish_beep(1:6) = []; % first six trials were part of the familiarization
-    finish_beep_time_on_Expdata = All_Experiment_time(finish_beep);
-    finish_beep_indx_on_All_EEG = ...
-        knnsearch(All_EEG_time', finish_beep_time_on_Expdata');
-    finish_beep_time_on_All_EEG = All_EEG_time(finish_beep_indx_on_All_EEG);
-    
+
+    % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
+    score_press = find(diff(All_Experiment(7, :)) > 0);
+    score_press_time_Expdata = All_Experiment_time(score_press);
+    score_press_indx_All_EEG = ...
+        knnsearch(All_EEG_time', score_press_time_Expdata');
+
+
     
     %% Removing trials which have empty high or low peaks (due to mistake in peak selction!)
     empty_trial_peak_indx = [];
     for i = 1:length(Trials_encoder_events)
         if isempty(Trials_encoder_events{1, i}.high_peaks) || ...
             isempty(Trials_encoder_events{1, i}.low_peaks)
-            empty_trial_peak_indx(1, end+1) = i;
+            empty_trial_peak_indx = cat(2, empty_trial_peak_indx, i);
         end
     end
     if ~isempty(empty_trial_peak_indx)
         Trials_encoder_events(empty_trial_peak_indx) = [];
     end
     
+    
     %% Initialize the structure template
     structTemplate = ...
-        struct('Trial_start_time',[], 'Trial_start_indx', [], ...
-        'Trial_end_time',[], 'Trial_end_indx', [], ...
-        'case', [], ...
-        'flexion_start_time', [], 'flexion_start_indx', [], ...
-        'flexion_end_time', [], 'flexion_end_indx', [], ...
-        'extension_start_time', [], 'extension_start_indx', [], ...
-        'extension_end_time', [], 'extension_end_indx', [], ...
-        'flextoflex_start_time', [], 'flextoflex_start_indx', [], ...
-        'flextoflex_end_time', [], 'flextoflex_end_indx', []);
+        struct('Trial_start_indx', [], ...
+               'Trial_end_indx', [], ...
+               'Pressure_Change_indx', [], ...
+               'Movement_start_indx', [], ...
+               'Movement_end_indx', [], ...
+               'flexion_start_indx', [], ...
+               'flexion_end_indx', [], ...
+               'extension_start_indx', [], ...
+               'extension_end_indx', [], ...
+               'flextoflex_start_indx', [], ...
+               'flextoflex_end_indx', []);
     
     events_on_eeg = struct('Raw', structTemplate, ...
         'Preprocessed', structTemplate);
     
-    general_info = struct('Pressure', [], 'Score', []);
+    general_info = struct('Discription', [], 'Session', [], ...
+        'Pressure', [], 'Score', [], 'Case', []);
     
     epochs_events = struct('EEG_stream', events_on_eeg, ...
         'EMG_stream', structTemplate, 'EXP_stream', structTemplate);
@@ -75,631 +96,203 @@ function Trials_Info = Main_event_selection(input_streams, ...
         1, length(Trials_encoder_events));
 
 
-    %% Separate trials in four sessions
     
-    a1 = struct('Description', [], 'Pressure', [], 'Score', [], 'Case', [], 'Trial_id', []);
-    a2 = struct('General', a1, 'Events', epochs_events);
-    % final_events_structTemplate_sessions = ...
-    %     struct('Session1', a2, 'Session2', a2, 'Session3', a2, 'Session4', a2);
-    Session1 = repmat({a2}, 1, sessions_trial_id(1));
-    Session2 = repmat({a2}, 1, sessions_trial_id(2) - sessions_trial_id(1) + 1);
-    Session3 = repmat({a2}, 1, sessions_trial_id(3) - sessions_trial_id(2) + 1);
-    Session4 = repmat({a2}, 1, sessions_trial_id(4) - sessions_trial_id(3) + 1);
+    %% Loop over all trials to fill the structure of events 
+    parpool('Threads', 6);
+    
+    %% Filling the "General" field
+    for i = 1:length(Trials_Info)
 
-    % Create a cell array of size 1xN_trials to store events on all streams
-    Trials_Info_Sessions = struct('Session1', {Session1}, ...
-        'Session2', {Session2}, 'Session3', {Session3}, 'Session4', {Session4});
-    
-    
-    %% Loop over all trials to fill the events timings and indeces
-    for i = 1:length(Trials_encoder_events)
-    
-        Trials_Info{1, i}.General.Pressure = All_Experiment(3, start_beep(1, i));
-        if i ~= length(Trials_encoder_events)
-            Trials_Info{1, i}.General.Score = All_Experiment(4, start_beep(1, i+1));
+        Trials_Info{1, i}.General.Discription = Trials_encoder_events{1, i}.Description;
+        Trials_Info{1, i}.General.Pressure = Trials_encoder_events{1, i}.Pressure;
+        Trials_Info{1, i}.General.Score = Trials_encoder_events{1, i}.Score;
+        Trials_Info{1, i}.General.Case = Trials_encoder_events{1, i}.Case;
+
+        if i <= sessions_trial_id(1)
+            Trials_Info{1, i}.General.Session = 1;
+        elseif (sessions_trial_id(1) < i) && (i <= sessions_trial_id(2))
+            Trials_Info{1, i}.General.Session = 2;
+        elseif (sessions_trial_id(2) < i) && (i <= sessions_trial_id(3))
+            Trials_Info{1, i}.General.Session = 3;
         else
-            Trials_Info{1, i}.General.Score = All_Experiment(4, end);
+            Trials_Info{1, i}.General.Session = 4;
         end
-        
-        
-        if Trials_encoder_events{1, i}.high_peaks.index(1) > ...
-                Trials_encoder_events{1, i}.low_peaks.index(1)
-            flag1 = 1;
-        else
-            flag1 = 0;
-        end
+
+    end
+
     
-        if Trials_encoder_events{1, i}.high_peaks.index(end) > ...
-                Trials_encoder_events{1, i}.low_peaks.index(end)
-            flag2 = 1;
-        else
-            flag2 = 0;
-        end
-        
-    
-    
-        all_types = {EEG.event.type};
-    
-    
-        % Find the indices where the type matches 'PC_Pressure_Change'
-        pressure_change_indx_on_EEGevent = ...
-            find(strcmp(all_types, 'PC_Pressure_Change'), i);
-        pressure_change_latency_on_EEGevent = ...
-            EEG.event(pressure_change_indx_on_EEGevent(i)).latency;
-        pressure_change_time_on_EEGtimes = EEG.times(pressure_change_latency_on_EEGevent);
-    
-        % Trial start time & index on Preprocessed EEG stream
-        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.Trial_start_time = ...
-            pressure_change_time_on_EEGtimes;
-        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.Trial_start_indx = ...
-            pressure_change_latency_on_EEGevent;
-    
-        % Trial start time & index on Raw EEG stream
-        Trials_Info{1, i}.Events.EEG_stream.Raw.Trial_start_time = ...
-            pressure_change_time_on_All_EEG(i);
+    %% Filling the "Events.EEG_stream.Raw" field (indeces on All_EEG stream)
+    parfor i = 1:length(Trials_Info)
+
+        % Trial start & end
         Trials_Info{1, i}.Events.EEG_stream.Raw.Trial_start_indx = ...
-            pressure_change_indx_on_All_EEG(i);
-    
-        % Trial start time & index on EMG stream
-        [~, tmp_indx] = min(abs(All_EMG_time - pressure_change_time_on_All_EEG(i)));
-        Trials_Info{1, i}.Events.EMG_stream.Trial_start_indx = tmp_indx;
-        Trials_Info{1, i}.Events.EMG_stream.Trial_start_time = All_EMG_time(tmp_indx);
-    
-        % Trial start time & index on EXP stream
-        Trials_Info{1, i}.Events.EXP_stream.Trial_start_indx = start_beep(i);
-        Trials_Info{1, i}.Events.EXP_stream.Trial_start_time = All_Experiment_time(start_beep(i));
-    
-    
-    
-    
-    
-        % Find the indices where the type matches 'FB_Finish_Beep'
-        finish_beep_indx_on_EEGevent = ...
-            find(strcmp(all_types, 'FB_Finish_Beep'), i);
-        finish_beep_latency_on_EEGevent = ...
-            EEG.event(finish_beep_indx_on_EEGevent(i)).latency;
-        finish_beep_time_on_EEGtimes = EEG.times(finish_beep_latency_on_EEGevent);
-    
-        % Trial end time & index on Preprocessed EEG stream
-        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.Trial_end_time = ...
-            finish_beep_time_on_EEGtimes;
-        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.Trial_end_indx = ...
-            finish_beep_latency_on_EEGevent;
-    
-        % Trial end time & index on Raw EEG stream
-        Trials_Info{1, i}.Events.EEG_stream.Raw.Trial_end_time = ...
-            finish_beep_time_on_All_EEG(i);
+            start_beep_indx_All_EEG(i);
         Trials_Info{1, i}.Events.EEG_stream.Raw.Trial_end_indx = ...
-            finish_beep_indx_on_All_EEG(i);
-    
-        % Trial end time & index on EMG stream
-        [~, tmp_indx] = min(abs(All_EMG_time - finish_beep_time_on_All_EEG(i)));
-        Trials_Info{1, i}.Events.EMG_stream.Trial_end_indx = tmp_indx;
-        Trials_Info{1, i}.Events.EMG_stream.Trial_end_time = All_EMG_time(tmp_indx);
-    
-        % Trial end time & index on EXP stream
-        Trials_Info{1, i}.Events.EXP_stream.Trial_end_indx = finish_beep(i);
-        Trials_Info{1, i}.Events.EXP_stream.Trial_end_time = All_Experiment_time(finish_beep(i));
-    
-    
-    
-    
-        
-        % Find the indices where the type matches 'SB_Start_Beep'
-        start_beep_indx_on_EEGevent = ...
-            find(strcmp(all_types, 'SB_Start_Beep'), i);
-        start_beep_latency_on_EEGevent = ...
-            EEG.event(start_beep_indx_on_EEGevent(i)).latency;
-        start_beep_time_on_EEGtimes = EEG.times(start_beep_latency_on_EEGevent);
-    
-    
-    
-    
-        if flag1 == 1 && flag2 == 1 % case 1
-            Case = 1;
-            % filling the case parameter
-            Trials_Info{1, i}.Events.EEG_stream.Raw.case = 1;
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.case = 1;
-            Trials_Info{1, i}.Events.EMG_stream.case = 1;
-            Trials_Info{1, i}.Events.EXP_stream.case = 1;
-    
-            epoch_count = numel(Trials_encoder_events{1, i}.high_peaks.time)-1;
-    
-        elseif flag1 == 1 && flag2 == 0 % case 2
-            Case = 2;
-            % filling the case parameter
-            Trials_Info{1, i}.Events.EEG_stream.Raw.case = 2;
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.case = 2;
-            Trials_Info{1, i}.Events.EMG_stream.case = 2;
-            Trials_Info{1, i}.Events.EXP_stream.case = 2;
-    
-            epoch_count = numel(Trials_encoder_events{1, i}.high_peaks.time);
-    
-        elseif flag1 == 0 && flag2 == 1 % case 3
-            Case = 3;
-            % filling the case parameter
-            Trials_Info{1, i}.Events.EEG_stream.Raw.case = 3;
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.case = 3;
-            Trials_Info{1, i}.Events.EMG_stream.case = 3;
-            Trials_Info{1, i}.Events.EXP_stream.case = 3;
-    
-            epoch_count = numel(Trials_encoder_events{1, i}.high_peaks.time)-1;
-    
-        elseif flag1 == 0 && flag2 == 0 % case 4
-            Case = 4;
-            % filling the case parameter
-            Trials_Info{1, i}.Events.EEG_stream.Raw.case = 4;
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.case = 4;
-            Trials_Info{1, i}.Events.EMG_stream.case = 4;
-            Trials_Info{1, i}.Events.EXP_stream.case = 4;
-    
-            epoch_count = numel(Trials_encoder_events{1, i}.high_peaks.time);
-    
-        end
-    
-    
-    
-        for j = 1:epoch_count
-    
-            if Case == 1
-                % flexion start
-                [~, FlxS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                % flexion end
-                [~, FlxE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j+1)));
-                % extension start
-                [~, ExtS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j+1)));
-                % extension end
-                [~, ExtE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                % flextoflex start
-                [~, flextoflexS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                % flextoflex end
-                [~, flextoflexE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                
-    
-            elseif Case == 2
-                % flexion start
-                [~, FlxS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                % flexion end
-                [~, FlxE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j+1)));
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    % extension start
-                    [~, ExtS_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j+1)));
-                    % extension end
-                    [~, ExtE_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                    % flextoflex start
-                    [~, flextoflexS_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                    % flextoflex end
-                    [~, flextoflexE_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                end
-               
-    
-            elseif Case == 3
-                % flexion start
-                [~, FlxS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                % flexion end
-                [~, FlxE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j)));
-                % extension start
-                [~, ExtS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j)));
-                % extension end
-                [~, ExtE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                % flextoflex start
-                [~, flextoflexS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                % flextoflex end
-                [~, flextoflexE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-    
-    
-            elseif Case == 4
-                % flexion start
-                [~, FlxS_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                % flexion end
-                [~, FlxE_indx_in_All_EEG_time] = ...
-                    min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j)));
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    % extension start
-                    [~, ExtS_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.low_peaks.time(j)));
-                    % extension end
-                    [~, ExtE_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                    % flextoflex start
-                    [~, flextoflexS_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j)));
-                    % flexto flex  end
-                    [~, flextoflexE_indx_in_All_EEG_time] = ...
-                        min(abs(All_EEG_time - Trials_encoder_events{1, i}.high_peaks.time(j+1)));
-                end
-            end
-    
-    
-            %% Events on the EXP stream
-            % flexion start
-            Trials_Info{1, i}.Events.EXP_stream.flexion_start_indx(end+1, 1) = ...
-                Trials_encoder_events{1, i}.high_peaks.index(j);
-            Trials_Info{1, i}.Events.EXP_stream.flexion_start_time(end+1, 1) = ...
-                Trials_encoder_events{1, i}.high_peaks.time(j);
-            % flexion end
-            if Case == 1 || Case == 2
-                Trials_Info{1, i}.Events.EXP_stream.flexion_end_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.index(j+1);
-                Trials_Info{1, i}.Events.EXP_stream.flexion_end_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.time(j+1);
-            else
-                Trials_Info{1, i}.Events.EXP_stream.flexion_end_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.index(j);
-                Trials_Info{1, i}.Events.EXP_stream.flexion_end_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.time(j);
-            end
-            % extension start
-            if Case == 1
-                Trials_Info{1, i}.Events.EXP_stream.extension_start_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.index(j+1);
-                Trials_Info{1, i}.Events.EXP_stream.extension_start_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.time(j+1);
-            elseif Case == 2
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    Trials_Info{1, i}.Events.EXP_stream.extension_start_indx(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.low_peaks.index(j+1);
-                    Trials_Info{1, i}.Events.EXP_stream.extension_start_time(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.low_peaks.time(j+1);
-                end
-            elseif Case == 3
-                Trials_Info{1, i}.Events.EXP_stream.extension_start_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.index(j);
-                Trials_Info{1, i}.Events.EXP_stream.extension_start_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.low_peaks.time(j);
-            elseif Case == 4
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    Trials_Info{1, i}.Events.EXP_stream.extension_start_indx(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.low_peaks.index(j);
-                    Trials_Info{1, i}.Events.EXP_stream.extension_start_time(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.low_peaks.time(j);
-                end
-            end
-            % extension end
-            if Case == 1 || Case == 3
-                Trials_Info{1, i}.Events.EXP_stream.extension_end_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.high_peaks.index(j+1);
-                Trials_Info{1, i}.Events.EXP_stream.extension_end_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.high_peaks.time(j+1);
-            else
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    Trials_Info{1, i}.Events.EXP_stream.extension_end_indx(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.high_peaks.index(j+1);
-                    Trials_Info{1, i}.Events.EXP_stream.extension_end_time(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.high_peaks.time(j+1);
-                end
-            end
-            % flextoflex start
-            if Case == 1 || Case == 3
-                Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.high_peaks.index(j);
-                Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.high_peaks.time(j);
-            else
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_indx(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.high_peaks.index(j);
-                    Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_time(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.high_peaks.time(j);
-                end
-            end
-            % flextoflex end
-            if Case == 1 || Case == 3
-                Trials_Info{1, i}.Events.EXP_stream.flextoflex_end_indx(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.high_peaks.index(j+1);
-                Trials_Info{1, i}.Events.EXP_stream.flextoflex_end_time(end+1, 1) = ...
-                    Trials_encoder_events{1, i}.high_peaks.time(j+1);
-            else
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    Trials_Info{1, i}.Events.EXP_stream.flextoflex_end_indx(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.high_peaks.index(j+1);
-                    Trials_Info{1, i}.Events.EXP_stream.flextoflex_end_time(end+1, 1) = ...
-                        Trials_encoder_events{1, i}.high_peaks.time(j+1);
-                end
-            end
-    
-            %% Events on EEG stream
-            %% Flexion Start
-            FlxS_in_All_EEG_time = All_EEG_time(FlxS_indx_in_All_EEG_time);
-    
-            % evevnts on EEG Raw stream
-            Trials_Info{1, i}.Events.EEG_stream.Raw.flexion_start_indx(end+1, 1) = FlxS_indx_in_All_EEG_time;
-            Trials_Info{1, i}.Events.EEG_stream.Raw.flexion_start_time(end+1, 1) = FlxS_in_All_EEG_time;
-            
-    
-            t1 = (FlxS_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-            [~, t1_index_temp] = min(abs(EEG.times - t1));
-    
-            % events on EEG Preprocessed stream
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(end+1, 1) = t1_index_temp;
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_time(end+1, 1) = EEG.times(t1_index_temp);
-    
-            
-    
-            % events on EMG stream
-            [~, t1_index_temp] = min(abs(All_EMG_time - FlxS_in_All_EEG_time));
-            Trials_Info{1, i}.Events.EMG_stream.flexion_start_indx(end+1, 1) = t1_index_temp;
-            Trials_Info{1, i}.Events.EMG_stream.flexion_start_time(end+1, 1) = All_EMG_time(t1_index_temp);
-            
-            
-    
-            
-            %% Flexion End
-            FlxE_in_All_EEG_time = All_EEG_time(FlxE_indx_in_All_EEG_time);
-    
-            % evevnts on EEG Raw stream
-            Trials_Info{1, i}.Events.EEG_stream.Raw.flexion_end_indx(end+1, 1) = FlxE_indx_in_All_EEG_time;
-            Trials_Info{1, i}.Events.EEG_stream.Raw.flexion_end_time(end+1, 1) = FlxE_in_All_EEG_time;
-            
-            
-            t2 = (FlxE_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-            [~, t2_index_temp] = min(abs(EEG.times - t2));
-    
-            % events on EEG Preprocessed stream
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_end_indx(end+1, 1) = t2_index_temp;
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_end_time(end+1, 1) = EEG.times(t2_index_temp);
-    
-    
-    
-            % events on EMG stream
-            [~, t2_index_temp] = min(abs(All_EMG_time - FlxE_in_All_EEG_time));
-            Trials_Info{1, i}.Events.EMG_stream.flexion_end_indx(end+1, 1) = t2_index_temp;
-            Trials_Info{1, i}.Events.EMG_stream.flexion_end_time(end+1, 1) = All_EMG_time(t2_index_temp);
-            
-           
-    
-    
-            %% Extension Start
-            if Case == 2 || Case == 4
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    ExtS_in_All_EEG_time = All_EEG_time(ExtS_indx_in_All_EEG_time);
-    
-                    % evevnts on EEG Raw stream
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.extension_start_indx(end+1, 1) = ExtS_indx_in_All_EEG_time;
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.extension_start_time(end+1, 1) = ExtS_in_All_EEG_time;
-                
-                    
-                    t3 = (ExtS_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                    [~, t3_index_temp] = min(abs(EEG.times - t3));
-                
-                    % events on EEG Preprocessed stream
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_start_indx(end+1, 1) = t3_index_temp;
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_start_time(end+1, 1) = EEG.times(t3_index_temp);
-                    
-                        
-    
-                    % events on EMG stream
-                    [~, t3_index_temp] = min(abs(All_EMG_time - ExtS_in_All_EEG_time));
-                    Trials_Info{1, i}.Events.EMG_stream.extension_start_indx(end+1, 1) = t3_index_temp;
-                    Trials_Info{1, i}.Events.EMG_stream.extension_start_time(end+1, 1) = All_EMG_time(t3_index_temp);
-                    
-                    
-    
-                end
-            else
-                ExtS_in_All_EEG_time = All_EEG_time(ExtS_indx_in_All_EEG_time);
-    
-                % evevnts on EEG Raw stream
-                Trials_Info{1, i}.Events.EEG_stream.Raw.extension_start_indx(end+1, 1) = ExtS_indx_in_All_EEG_time;
-                Trials_Info{1, i}.Events.EEG_stream.Raw.extension_start_time(end+1, 1) = ExtS_in_All_EEG_time;
-            
-                
-                t3 = (ExtS_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                [~, t3_index_temp] = min(abs(EEG.times - t3));
-            
-                % events on EEG Preprocessed stream
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_start_indx(end+1, 1) = t3_index_temp;
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_start_time(end+1, 1) = EEG.times(t3_index_temp);
-                
-    
-    
-                % events on EMG stream
-                [~, t3_index_temp] = min(abs(All_EMG_time - ExtS_in_All_EEG_time));
-                Trials_Info{1, i}.Events.EMG_stream.extension_start_indx(end+1, 1) = t3_index_temp;
-                Trials_Info{1, i}.Events.EMG_stream.extension_start_time(end+1, 1) = All_EMG_time(t3_index_temp);
-                
-               
-    
-            end
-    
-    
-    
-            %% Extension End
-            if Case == 2 || Case == 4
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    ExtE_in_All_EEG_time = All_EEG_time(ExtE_indx_in_All_EEG_time);
-    
-                    % evevnts on EEG Raw stream
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.extension_end_indx(end+1, 1) = ExtE_indx_in_All_EEG_time;
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.extension_end_time(end+1, 1) = ExtE_in_All_EEG_time;
-                
-                    
-                    t4 = (ExtE_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                    [~, t4_index_temp] = min(abs(EEG.times - t4));
-                
-                    % events on EEG Preprocessed stream
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_end_indx(end+1, 1) = t4_index_temp;
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_end_time(end+1, 1) = EEG.times(t4_index_temp);
-                    
-    
-    
-                    % events on EMG stream
-                    [~, t4_index_temp] = min(abs(All_EMG_time - ExtE_in_All_EEG_time));
-                    Trials_Info{1, i}.Events.EMG_stream.extension_end_indx(end+1, 1) = t4_index_temp;
-                    Trials_Info{1, i}.Events.EMG_stream.extension_end_time(end+1, 1) = All_EMG_time(t4_index_temp);
-                    
-                   
-    
-                end
-            else
-                ExtE_in_All_EEG_time = All_EEG_time(ExtE_indx_in_All_EEG_time);
-    
-                % evevnts on EEG Raw stream
-                Trials_Info{1, i}.Events.EEG_stream.Raw.extension_end_indx(end+1, 1) = ExtE_indx_in_All_EEG_time;
-                Trials_Info{1, i}.Events.EEG_stream.Raw.extension_end_time(end+1, 1) = ExtE_in_All_EEG_time;
-            
-                
-                t4 = (ExtE_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                [~, t4_index_temp] = min(abs(EEG.times - t4));
-            
-                % events on EEG Preprocessed stream
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_end_indx(end+1, 1) = t4_index_temp;
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_end_time(end+1, 1) = EEG.times(t4_index_temp);
-                
-    
-    
-                % events on EMG stream
-                [~, t4_index_temp] = min(abs(All_EMG_time - ExtE_in_All_EEG_time));
-                Trials_Info{1, i}.Events.EMG_stream.extension_end_indx(end+1, 1) = t4_index_temp;
-                Trials_Info{1, i}.Events.EMG_stream.extension_end_time(end+1, 1) = All_EMG_time(t4_index_temp);
-                
-                
-    
-            end
-    
-    
-    
-            %% flextoflex Start
-            if Case == 2 || Case == 4
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    flextoflexS_in_All_EEG_time = All_EEG_time(flextoflexS_indx_in_All_EEG_time);
-    
-                    % evevnts on EEG Raw stream
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_indx(end+1, 1) = flextoflexS_indx_in_All_EEG_time;
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_time(end+1, 1) = flextoflexS_in_All_EEG_time;
-                
-                    
-                    t5 = (flextoflexS_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                    [~, t5_index_temp] = min(abs(EEG.times - t5));
-                
-                    % events on EEG Preprocessed stream
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_indx(end+1, 1) = t5_index_temp;
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_time(end+1, 1) = EEG.times(t5_index_temp);
-                    
-    
-    
-                    % events on EMG stream
-                    [~, t5_index_temp] = min(abs(All_EMG_time - flextoflexS_in_All_EEG_time));
-                    Trials_Info{1, i}.Events.EMG_stream.flextoflex_start_indx(end+1, 1) = t5_index_temp;
-                    Trials_Info{1, i}.Events.EMG_stream.flextoflex_start_time(end+1, 1) = All_EMG_time(t5_index_temp);
-                    
-                    
-    
-                end
-            else
-                flextoflexS_in_All_EEG_time = All_EEG_time(flextoflexS_indx_in_All_EEG_time);
-    
-                % evevnts on EEG Raw stream
-                Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_indx(end+1, 1) = flextoflexS_indx_in_All_EEG_time;
-                Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_time(end+1, 1) = flextoflexS_in_All_EEG_time;
-            
-                
-                t5 = (flextoflexS_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                [~, t5_index_temp] = min(abs(EEG.times - t5));
-            
-                % events on EEG Preprocessed stream
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_indx(end+1, 1) = t5_index_temp;
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_time(end+1, 1) = EEG.times(t5_index_temp);
-                
-    
-    
-                % events on EMG stream
-                [~, t5_index_temp] = min(abs(All_EMG_time - flextoflexS_in_All_EEG_time));
-                Trials_Info{1, i}.Events.EMG_stream.flextoflex_start_indx(end+1, 1) = t5_index_temp;
-                Trials_Info{1, i}.Events.EMG_stream.flextoflex_start_time(end+1, 1) = All_EMG_time(t5_index_temp);
-                
-                
-    
-            end
-    
-    
-    
-            %% flextoflex End
-            if Case == 2 || Case == 4
-                if j < numel(Trials_encoder_events{1, i}.high_peaks.time)
-                    flextoflexE_in_All_EEG_time = All_EEG_time(flextoflexE_indx_in_All_EEG_time);
-    
-                    % evevnts on EEG Raw stream
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_end_indx(end+1, 1) = flextoflexE_indx_in_All_EEG_time;
-                    Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_end_time(end+1, 1) = flextoflexE_in_All_EEG_time;
-                
-                    
-                    t6 = (flextoflexE_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                    [~, t6_index_temp] = min(abs(EEG.times - t6));
-                
-                    % events on EEG Preprocessed stream
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_indx(end+1, 1) = t6_index_temp;
-                    Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_time(end+1, 1) = EEG.times(t6_index_temp);
-                    
-    
-    
-                    % events on EMG stream
-                    [~, t6_index_temp] = min(abs(All_EMG_time - flextoflexE_in_All_EEG_time));
-                    Trials_Info{1, i}.Events.EMG_stream.flextoflex_end_indx(end+1, 1) = t6_index_temp;
-                    Trials_Info{1, i}.Events.EMG_stream.flextoflex_end_time(end+1, 1) = All_EMG_time(t6_index_temp);
-                    
-                    
-    
-                end
-            else
-                flextoflexE_in_All_EEG_time = All_EEG_time(flextoflexE_indx_in_All_EEG_time);
-    
-                % evevnts on EEG Raw stream
-                Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_end_indx(end+1, 1) = flextoflexE_indx_in_All_EEG_time;
-                Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_end_time(end+1, 1) = flextoflexE_in_All_EEG_time;
-            
-                
-                t6 = (flextoflexE_in_All_EEG_time - All_EEG_time(start_beep_indx_All_EEG(i)))*1000 + start_beep_time_on_EEGtimes;                
-                [~, t6_index_temp] = min(abs(EEG.times - t6));
-            
-                % events on EEG Preprocessed stream
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_indx(end+1, 1) = t6_index_temp;
-                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_time(end+1, 1) = EEG.times(t6_index_temp);
-                
-    
-    
-                % events on EMG stream
-                [~, t6_index_temp] = min(abs(All_EMG_time - flextoflexE_in_All_EEG_time));
-                Trials_Info{1, i}.Events.EMG_stream.flextoflex_end_indx(end+1, 1) = t6_index_temp;
-                Trials_Info{1, i}.Events.EMG_stream.flextoflex_end_time(end+1, 1) = All_EMG_time(t6_index_temp);
-                
-               
-    
-            end
-    
-    
-    
-        end
+            score_press_indx_All_EEG(i);
+
+        % Pressure Change
+        Trials_Info{1, i}.Events.EEG_stream.Raw.Pressure_Change_indx = ...
+            pressure_change_indx_All_EEG(i);
+
+        % Movement start & end
+        Trials_Info{1, i}.Events.EEG_stream.Raw.Movement_start_indx = ...
+            start_move_indx_All_EEG(i);
+        Trials_Info{1, i}.Events.EEG_stream.Raw.Movement_end_indx = ...
+            finish_beep_indx_All_EEG(i);
+
+        % flexion start & end
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start);
+        Trials_Info{1, i}.Events.EEG_stream.Raw.flexion_start_indx = ...
+            interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_End);
+        Trials_Info{1, i}.Events.EEG_stream.Raw.flexion_end_indx = ...
+            interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+
+        % extension start & end
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Extension_Start);
+        Trials_Info{1, i}.Events.EEG_stream.Raw.extension_start_indx = ...
+            interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Extension_End);
+        Trials_Info{1, i}.Events.EEG_stream.Raw.extension_end_indx = ...
+            interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+
+        % flextoflex start & end
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end-1));
+        Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_indx = ...
+            interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_End(2:end));
+        Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_end_indx = ...
+            interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+
     end
     
+
+    %% Filling the "Events.EMG_stream" field 
+    parfor i = 1:length(Trials_Info)
     
-    % %% check timing on streams
-    % err1 = Trials_Info{1, 150}.Events.EXP_stream.flexion_start_time  - ...
-    %     Trials_Info{1, 150}.Events.EMG_stream.flexion_start_time;
-    % err2 = Trials_Info{1, 100}.Events.EXP_stream.flextoflex_start_time  - ...
-    %     Trials_Info{1, 100}.Events.EEG_stream.Raw.flextoflex_start_time;
-    % err3 = Trials_Info{1, 30}.Events.EMG_stream.extension_end_time  - ...
-    %     Trials_Info{1, 30}.Events.EEG_stream.Raw.extension_end_time;
+        % Trial start & end
+        [~, Trials_Info{1, i}.Events.EMG_stream.Trial_start_indx] = ...
+            min(abs(All_EMG_time - All_Experiment_time(start_beep(1, i))));
+        [~, Trials_Info{1, i}.Events.EMG_stream.Trial_end_indx] = ...
+            min(abs(All_EMG_time - All_Experiment_time(score_press(1, i))));
+
+        % Pressure Change
+        [~, Trials_Info{1, i}.Events.EMG_stream.Pressure_Change_indx] = ...
+            min(abs(All_EMG_time - All_EEG_time(pressure_change_indx_All_EEG(i))));
+
+        % Movement start & end
+        [~, Trials_Info{1, i}.Events.EMG_stream.Movement_start_indx] = ...
+            min(abs(All_EMG_time - All_Experiment_time(start_move(2, i))));
+        [~, Trials_Info{1, i}.Events.EMG_stream.Movement_end_indx] = ...
+            min(abs(All_EMG_time - All_Experiment_time(finish_beep(1, i))));
+
+        % flexion start & end
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start);
+        Trials_Info{1, i}.Events.EMG_stream.flexion_start_indx = ...
+            interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
+
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_End);
+        Trials_Info{1, i}.Events.EMG_stream.flexion_end_indx = ...
+            interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
+
+        % extension start & end
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Extension_Start);
+        Trials_Info{1, i}.Events.EMG_stream.extension_start_indx = ...
+            interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
+
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Extension_End);
+        Trials_Info{1, i}.Events.EMG_stream.extension_end_indx = ...
+            interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
+
+        % flextoflex start & end
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end-1));
+        Trials_Info{1, i}.Events.EMG_stream.flextoflex_start_indx = ...
+            interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
+
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_End(2:end));
+        Trials_Info{1, i}.Events.EMG_stream.flextoflex_end_indx = ...
+            interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
+
+    end
+
+
+    %% Filling the "Events.EXP_stream" field
+    for i = 1:length(Trials_Info)
+
+        % Trial start & end
+        Trials_Info{1, i}.Events.EXP_stream.Trial_start_indx = ...
+            start_beep(1, i);
+        Trials_Info{1, i}.Events.EXP_stream.Trial_end_indx = ...
+            score_press(1, i);
+
+        % Pressure Change
+        [~, Trials_Info{1, i}.Events.EXP_stream.Pressure_Change_indx] = ...
+            min(abs(All_Experiment_time - pressure_change_time_Expdata(1, i)));
+
+        % Movement start & end
+        Trials_Info{1, i}.Events.EXP_stream.Movement_start_indx = ...
+            start_move(2, i);
+        Trials_Info{1, i}.Events.EXP_stream.Movement_end_indx = ...
+            finish_beep(1, i);
+
+        % flexion start & end
+        Trials_Info{1, i}.Events.EXP_stream.flexion_start_indx = ...
+            Trials_encoder_events{1, i}.Flexion_Start;
+        Trials_Info{1, i}.Events.EXP_stream.flexion_end_indx = ...
+            Trials_encoder_events{1, i}.Flexion_End;
+
+        % extension start & end
+        Trials_Info{1, i}.Events.EXP_stream.extension_start_indx = ...
+            Trials_encoder_events{1, i}.Extension_Start;
+        Trials_Info{1, i}.Events.EXP_stream.extension_end_indx = ...
+            Trials_encoder_events{1, i}.Extension_End;
+
+        % flextoflex start & end
+        Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_indx = ...
+            Trials_encoder_events{1, i}.Flexion_Start(1:end-1);
+        Trials_Info{1, i}.Events.EXP_stream.flextoflex_end_indx = ...
+            Trials_encoder_events{1, i}.Flexion_End(2:end);
+
+    end
     
+
+    %% Filling the "Events.EEG_stream.Preprocessed" field (on EEGLAB data after preprocessing)
+    EEGLAB_event_type = {EEG.event.type};
+    EEGLAB_event_desc = {EEG.event.desc};
+    for i = 1:length(Trials_Info)
+        desc_ending = ['_', num2str(i)];
+    
+        desired_types = {'SB_Start_Beep', 'SP_Score_Press', ...
+            'PC_Pressure_Change', ...
+            'SM_Start_Move', 'FB_Finish_Beep', ...
+            'FlxS', 'FlxE', 'ExtS', 'ExtE'};
+        corresponding_fields = {'Trial_start_indx', 'Trial_end_indx', ...
+            'Pressure_Change_indx', ...
+            'Movement_start_indx', 'Movement_end_indx', ...
+            'flexion_start_indx', 'flexion_end_indx', ...
+            'extension_start_indx', 'extension_end_indx'};
+
+        for s = 1:numel(desired_types)
+
+            indices = strcmp(EEGLAB_event_type, desired_types{s}) & ...
+                  endsWith(EEGLAB_event_desc, desc_ending);
+            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.(corresponding_fields{s}) = ...
+                [EEG.event(indices).latency];
+
+        end
+        
+        % flextoflex start & end
+        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_indx = ...
+            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(1:end-1);
+        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_indx = ...
+            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(2:end);
+
+    end
+
+
     
     %% Save Trials_Info
 

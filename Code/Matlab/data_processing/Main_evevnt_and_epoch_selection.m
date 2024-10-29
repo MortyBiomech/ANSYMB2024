@@ -50,7 +50,7 @@ EEG = pop_loadset('filename', filename, 'filepath', filepath);
 % find_flexion_extension_events
 filepath = [data_path, '6_0_Trials_Info_and_Events', filesep, 'sub-', ...
     num2str(subject_id)];
-filename = ['subj_', num2str(subject_id),'_Trials_encoder_events.mat'];
+filename = ['sub-', num2str(subject_id),'_Trials_encoder_events.mat'];
 load(fullfile(filepath, filename))
 
 
