@@ -20,8 +20,10 @@ function Trials_Info = Main_event_selection(input_streams, ...
     start_beep = reshape(start_beep, 2, []);
     start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
     start_beep_indx_All_EEG = ...
-        knnsearch(All_EEG_time', start_beep_time_Expdata');
-    
+        interp1(All_EEG_time, 1:length(All_EEG_time), start_beep_time_Expdata', 'nearest', 'extrap');
+        % knnsearch(All_EEG_time', start_beep_time_Expdata');
+
+
 
     % pressure_change event (2s after first single beep)
     pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
@@ -82,7 +84,7 @@ function Trials_Info = Main_event_selection(input_streams, ...
     events_on_eeg = struct('Raw', structTemplate, ...
         'Preprocessed', structTemplate);
     
-    general_info = struct('Discription', [], 'Session', [], ...
+    general_info = struct('Description', [], 'Session', [], ...
         'Pressure', [], 'Score', [], 'Case', []);
     
     epochs_events = struct('EEG_stream', events_on_eeg, ...
@@ -103,7 +105,7 @@ function Trials_Info = Main_event_selection(input_streams, ...
     %% Filling the "General" field
     for i = 1:length(Trials_Info)
 
-        Trials_Info{1, i}.General.Discription = Trials_encoder_events{1, i}.Description;
+        Trials_Info{1, i}.General.Description = Trials_encoder_events{1, i}.Description;
         Trials_Info{1, i}.General.Pressure = Trials_encoder_events{1, i}.Pressure;
         Trials_Info{1, i}.General.Score = Trials_encoder_events{1, i}.Score;
         Trials_Info{1, i}.General.Case = Trials_encoder_events{1, i}.Case;
@@ -290,6 +292,20 @@ function Trials_Info = Main_event_selection(input_streams, ...
         Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_indx = ...
             Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(2:end);
 
+    end
+
+
+    %% Correct the trials description
+    % If you found any problem in the next data processing steps (like data
+    % epoching) come back here and update the trials description with
+    % proper explanation. For example, in subject 10, trial 196, EEG data
+    % was lost due to some issues in connection and the description was
+    % corrected to be "Experiment - EEG Data Loss". Later we can use this
+    % description to exclude the problematic trials from our analysis.
+    problematic_trials = [196];
+    for i = 1:numel(problematic_trials)
+        Trials_Info{1, problematic_trials(i)}.General.Description = ...
+            'Experiment - EEG Data Loss';
     end
 
 

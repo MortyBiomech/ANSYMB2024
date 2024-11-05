@@ -83,7 +83,7 @@ Trials_Info = Main_event_selection(output, ...
 
 %% EMG sensors id 
 % sensors which were used for measuring muscles activity (Delsys System)
-EMG_sensor_id = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+EMG_sensor_id = [2, 3, 4, 5, 6, 7];
 
 
 %% Split dataset based on events
