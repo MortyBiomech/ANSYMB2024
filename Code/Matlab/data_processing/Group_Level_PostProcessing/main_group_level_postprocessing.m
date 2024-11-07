@@ -1,0 +1,66 @@
+clc
+clear
+
+%% Add and Define Necessary Paths
+addpath(genpath('C:\Morteza\MyProjects\ANSYMB2024')); % main folder containing all codes and data
+
+% Change path to the directory on your PC which raw XDF files are stored:
+data_path = 'C:\Morteza\MyProjects\ANSYMB2024\data\';
+processed_data_path = [data_path, '5_single-subject-EEG-analysis\'];
+
+
+%% Run EEGLAB
+if ~exist('ALLCOM','var')
+	eeglab;
+end
+
+
+%% Create a new STUDY set
+
+% Define subjects
+subject_list = {'5', '6', '7', '8', '9', '10'};  % List of subject IDs
+
+% Load datasets into ALLEEG
+for i = 1:length(subject_list)
+    file_name = ['sub-', subject_list{i}, '_cleaned_with_ICA.set'];
+    dataset_path = fullfile([processed_data_path, 'sub-', ...
+        subject_list{i}, filesep]);
+    EEG = pop_loadset('filename', file_name, 'filepath', dataset_path);
+    [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, i);
+end
+
+
+% Create STUDY
+study_name = 'main_study.study';
+study_folder = [data_path, '7_STUDY'];
+
+% Create STUDY from loaded datasets using commands
+commands = cell(1, length(subject_list));
+for i = 1:length(subject_list)
+    commands{i} = {'index', i, 'subject', subject_list{i}};
+end
+
+[STUDY, ALLEEG] = std_editset([], ALLEEG, ...
+    'name', study_name, ...
+    'filepath', study_folder, ...
+    'commands', commands, ...
+    'updatedat', 'on', 'savedat', 'off');
+
+% Save STUDY
+[STUDY, ALLEEG] = pop_savestudy(STUDY, ALLEEG, 'filename', study_name, 'filepath', study_folder);
+
+
+%% Compute the pre-cluster
+clustering_weights = struct();
+clustering_weights.dipoles = 3;
+clustering_weights.scalp = 1;
+clustering_weights.spec = 1;
+
+freqrange = [1 50];
+timewindow = [];
+out_filename = 'main_study_preclustered';
+out_filepath = study_folder;
+
+[STUDY, ALLEEG, EEG] = ...
+    bemobil_precluster(STUDY, ALLEEG, EEG, clustering_weights, ...
+    freqrange, timewindow, out_filename, out_filepath);
