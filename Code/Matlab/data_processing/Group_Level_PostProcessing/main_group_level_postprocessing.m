@@ -37,7 +37,8 @@ study_folder = [data_path, '7_STUDY'];
 % Create STUDY from loaded datasets using commands
 commands = cell(1, length(subject_list));
 for i = 1:length(subject_list)
-    commands{i} = {'index', i, 'subject', subject_list{i}};
+    commands{i} = {'index', i, 'subject', subject_list{i}, ...
+        'inbrain', 'on', 'dipselect', 0.15};
 end
 
 [STUDY, ALLEEG] = std_editset([], ALLEEG, ...
@@ -54,13 +55,79 @@ end
 clustering_weights = struct();
 clustering_weights.dipoles = 3;
 clustering_weights.scalp = 1;
-clustering_weights.spec = 1;
 
+clustering_weights.spec = 0;
 freqrange = [1 50];
 timewindow = [];
+
 out_filename = 'main_study_preclustered';
 out_filepath = study_folder;
 
 [STUDY, ALLEEG, EEG] = ...
     bemobil_precluster(STUDY, ALLEEG, EEG, clustering_weights, ...
     freqrange, timewindow, out_filename, out_filepath);
+
+
+%% Implementing the repeated clustering
+
+% select the region of interest (ROI) - MNI Coordinates
+Left_PrimMotor = [-36, -19, 48];
+
+cluster_ROI_name  = 'Left_PrimMotor';
+cluster_ROI_MNI.x = Left_PrimMotor(1);
+cluster_ROI_MNI.y = Left_PrimMotor(2);
+cluster_ROI_MNI.z = Left_PrimMotor(3);
+
+
+% standard deviations boundary for outlier detection
+outlier_sigma = 3; 
+
+% number of clusters to be created
+n_clust = 14;
+
+% number of iterations to be performed for repeated clustering
+n_iterations = 1000;
+
+% quality_measure_weights: vector of weights for quality measures (6 entries): 
+%                          - subjects, 
+%                          - ICs/subjects, 
+%                          - normalized spread, 
+%                          - mean RV, 
+%                          - distance from ROI, 
+%                          - mahalanobis distance from median of multivariate distribution
+%                            (put this very high to get the most "normal" solution)
+quality_measure_weights = [3, -1, -1, -1, -2, -1];
+
+% whether or not the clustering should be done (it takes a lot of time).
+do_clustering = 1;
+
+% whether or not the creation of the multivariate dataset should be done.
+do_multivariate_data = 1;
+
+% filepath where the new STUDY should be saved
+filepath_STUDY = [study_folder, '\multiple_clustering\', cluster_ROI_name];
+% filename of the new STUDY
+filename_STUDY = ['main_study_', cluster_ROI_name];
+
+% filepath where the clustering solutions should be saved
+filepath_clustering_solutions = [filepath_STUDY, '\clustering_solutions'];
+% filename of the repeated clustering solutions' data set
+filename_clustering_solutions = [cluster_ROI_name, '_clustering_solutions'];
+
+% filepath where the multivariate data should be saved
+filepath_multivariate_data = [filepath_STUDY, '\multivariate_data'];
+% filename of the multivariate data set
+filename_multivariate_data = [cluster_ROI_name, '_multivariate_data'];
+
+
+[STUDY, ALLEEG, EEG] = ...
+    bemobil_repeated_clustering_and_evaluation(STUDY, ALLEEG, EEG, ...
+    outlier_sigma, n_clust, n_iterations, cluster_ROI_MNI, ...
+    quality_measure_weights, do_clustering, do_multivariate_data, ...
+    filepath_STUDY, filename_STUDY, ...
+    filepath_clustering_solutions, filename_clustering_solutions, ...
+    filepath_multivariate_data, filename_multivariate_data);
+
+
+
+
