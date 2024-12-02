@@ -49,17 +49,19 @@ out_filepath = study_folder;
 
 % select the region of interest (ROI) - MNI Coordinates
 % Left_PrimMotor = [-36, -19, 48];
-% Left_PreMot_SuppMot = [-28, -2, 52]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+Left_PreMot_SuppMot = [-28, -2, 52]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Left_Paracentral_Lobule = [0, -20, 62]; % ref: https://pmc.ncbi.nlm.nih.gov/articles/PMC5663902/table/Tab2/
 % Left_Dorsal_ACC = [-5, 39, 20]; % ACC: Anterior Cingulate Cortex - ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Left_VisMotor = [-18, -67, 40]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Left_PrimVisual = [-11, -81, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+% Left_PrimAuditory = [-52, -19, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Right_PreMot_SuppMot = [28, -1, 51]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Right_VisMotor = [23, -60, 61]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-Right_PrimVisual = [11, -78, 9]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+% Right_PrimVisual = [11, -78, 9]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+% Right_PrimAuditory = [50, -21, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 
-ROI = Right_PrimVisual;
-cluster_ROI_name  = 'Right_PrimVisual';
+ROI = Left_PreMot_SuppMot;
+cluster_ROI_name  = 'Left_PreMot_SuppMot';
 cluster_ROI_MNI.x = ROI(1);
 cluster_ROI_MNI.y = ROI(2);
 cluster_ROI_MNI.z = ROI(3);
@@ -79,7 +81,7 @@ n_iterations = 1000;
 %                          - distance from ROI, 
 %                          - mahalanobis distance from median of multivariate distribution
 %                            (put this very high to get the most "normal" solution)
-quality_measure_weights = [3, -1, -1, -1, -2, -1];
+quality_measure_weights = [3, -1, -1, -1, -2, -100];
 
 % whether or not the clustering should be done (it takes a lot of time).
 do_clustering = 1;
@@ -129,12 +131,11 @@ for i = 1:numel(number_of_clusters)
 
 end
 
-
-% n_clust = 
-% 
+[~, N_idx] = max(score_NCluster(:, 1));
+N = score_NCluster(N_idx, 2);
 [STUDY, ALLEEG, EEG] = ...
     bemobil_repeated_clustering_and_evaluation(STUDY, ALLEEG, EEG, ...
-    outlier_sigma, score_NCluster(1, 2), n_iterations, cluster_ROI_MNI, ...
+    outlier_sigma, N, n_iterations, cluster_ROI_MNI, ...
     quality_measure_weights, do_clustering, do_multivariate_data, ...
     filepath_STUDY, filename_STUDY, ...
     filepath_clustering_solutions, filename_clustering_solutions, ...
