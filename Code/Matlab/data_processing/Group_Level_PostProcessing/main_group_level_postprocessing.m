@@ -25,7 +25,7 @@ end
 subject_list = [5, 6, 7, 8, 9, 10];  % List of subject IDs
 
 %% calling function to create and save the main study files
-% create_and_save_main_study_files(subject_list, data_path, processed_data_path, ALLEEG)
+create_and_save_main_study_files(subject_list, data_path, processed_data_path, ALLEEG)
 
 
 %% Compute the pre-cluster
@@ -49,7 +49,7 @@ out_filepath = study_folder;
 
 % select the region of interest (ROI) - MNI Coordinates
 % Left_PrimMotor = [-36, -19, 48];
-Left_PreMot_SuppMot = [-28, -2, 52]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+% Left_PreMot_SuppMot = [-28, -2, 52]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Left_Paracentral_Lobule = [0, -20, 62]; % ref: https://pmc.ncbi.nlm.nih.gov/articles/PMC5663902/table/Tab2/
 % Left_Dorsal_ACC = [-5, 39, 20]; % ACC: Anterior Cingulate Cortex - ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Left_VisMotor = [-18, -67, 40]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
@@ -60,8 +60,8 @@ Left_PreMot_SuppMot = [-28, -2, 52]; % ref: https://bioimagesuiteweb.github.io/w
 % Right_PrimVisual = [11, -78, 9]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Right_PrimAuditory = [50, -21, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 
-ROI = Left_PreMot_SuppMot;
-cluster_ROI_name  = 'Left_PreMot_SuppMot';
+ROI = Left_Dorsal_ACC;
+cluster_ROI_name  = 'Left_Dorsal_ACC';
 cluster_ROI_MNI.x = ROI(1);
 cluster_ROI_MNI.y = ROI(2);
 cluster_ROI_MNI.z = ROI(3);
@@ -141,5 +141,7 @@ N = score_NCluster(N_idx, 2);
     filepath_clustering_solutions, filename_clustering_solutions, ...
     filepath_multivariate_data, filename_multivariate_data);
 
+beep
+
 %% End of code - Remove the folder and its subfolders from the MATLAB path
-rmpath(main_project_folder);
+rmpath(genpath(main_project_folder));
