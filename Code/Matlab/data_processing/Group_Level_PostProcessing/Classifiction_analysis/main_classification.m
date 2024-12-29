@@ -45,6 +45,7 @@ end
 
 %% Creat a metafile containg all ROIs and Subjects/ICs RMS features
 epoch_type = 'Epochs_Flexion_based.mat';
+features_from_epochs = 'Flexion';
 ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_list, ...
-    epoch_type, data_path, main_project_folder);
+    epoch_type, features_from_epochs, data_path, main_project_folder);
 

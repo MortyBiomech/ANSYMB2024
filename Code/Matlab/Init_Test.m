@@ -2,7 +2,7 @@ clc; clear;
 
 %%
 disp('Defining the Arduino...');
-a = arduino('COM12','Mega2560','Libraries','rotaryEncoder')
+a = arduino('COM8','Mega2560','Libraries','rotaryEncoder')
 disp('Defining the Encoder...');
 encoder = rotaryEncoder(a,'D2','D3',1000)
 

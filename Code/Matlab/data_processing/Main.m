@@ -12,7 +12,7 @@ addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127')
 addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127\fileio')
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 4;
+subject_id = 14;
 rawdata_path = [study_path, '0_source_data\'];
 output = runs_concatenated(subject_id, rawdata_path);
 
@@ -77,7 +77,7 @@ studyFolder   = study_path(1:end-1);
 
 % replace with names of your sessions (if there are no multiple sessions, 
 % remove confg.ses and the session loop in the following)
-sessionNames  = {'S001', 'S002', 'S003', 'S004', 'S005'};             
+sessionNames  = {'S001', 'S002', 'S003', 'S004'};             
 
 % loop over sessions 
 for session = 1:length(sessionNames)
@@ -157,11 +157,10 @@ bemobil_bids2set(config);
 bemobil_config = BeMoBIL_Configuration(study_path);
 
 % enter all subjects to process here (you can split it up in more MATLAB instances if you have more CPU power and RAM)
-subjects = 10; 
+subjects = 14; 
 
 % set to 1 if all files should be computed, independently of whether they are present on disk or not
 force_recompute = 0; 
-
 
 
 %% processing loop
@@ -215,10 +214,18 @@ for subject = subjects
     %% reselect EEG channels and remove ACC channels
     EEG = pop_select(EEG, 'rmchannel', [65, 66, 67]);
 
+
     %% Load channels location file
     EEG = pop_chanedit(EEG,'load', [processing_path, 'chanlocs.ced']); 
 
+
     %% Define and Add events
+
+    % %% Add Events to EEG data
+    % [EEG, removeindices] = Main_add_events(EEG, output, ...
+    %     subject, subject_id, processing_path, input_filepath, bemobil_config);
+
+    
     % Compute latency values
     
     % start_beep event (first single beep)
@@ -263,9 +270,9 @@ for subject = subjects
 
     
     %% Define and Add Events
-    if subject_id == 10
-        no_PAM_trials = [1:6; 103:108; 109:114; 205:210];
-        familiarization_trials = 7:12;
+    if subject_id == 14
+        no_PAM_trials = [1:3, 39:41, 42:44, 76:78, 79:81, 112:114, 115:117, 148:150];
+        familiarization_trials = 4:9;
     end
     % Import Trials information
     Trials = cell(1, size(start_beep,2));
@@ -403,10 +410,6 @@ for subject = subjects
     %% individual EEG processing to remove non-exp segments
     % it is stongly recommended to remove these segments because they may contain strong artifacts that confuse channel
     % detection and AMICA
-    
-    
-    allevents = {EEG.event.type}';
-    
     removeindices = zeros(size(start_beep,2)+1 ,2);
     % remove from start to first event
     removeindices(1, :) = [0 EEG.event(1).latency]; 
@@ -474,78 +477,84 @@ for subject = subjects
 
 
     %% run the app to select unwanted peaks 
-    % find_flexion_extension_events
+    app = find_flexion_extension_events;
+
+
+    %% load the Trials_encoder_events fully defined
+    Trials_encoder_events = load([study_path, '6_0_Trials_Info_and_Events\sub-', ...
+        num2str(subject_id), filesep, 'sub-', num2str(subject_id), ...
+        '_Trials_encoder_events.mat']);
 
 
     %% Add flexion and extension indexes to Trials_encoder_events structure (based on Exp stream indexes)
     for i = 1:length(Trials_encoder_events)
+        if length(Trials_encoder_events{1, i}.high_peaks.index) > 1
+            if Trials_encoder_events{1, i}.high_peaks.index(1) > ...
+                    Trials_encoder_events{1, i}.low_peaks.index(1)
+                flag1 = 1;
+            else
+                flag1 = 0;
+            end
         
-        if Trials_encoder_events{1, i}.high_peaks.index(1) > ...
-                Trials_encoder_events{1, i}.low_peaks.index(1)
-            flag1 = 1;
-        else
-            flag1 = 0;
-        end
+            if Trials_encoder_events{1, i}.high_peaks.index(end) > ...
+                    Trials_encoder_events{1, i}.low_peaks.index(end)
+                flag2 = 1;
+            else
+                flag2 = 0;
+            end
     
-        if Trials_encoder_events{1, i}.high_peaks.index(end) > ...
-                Trials_encoder_events{1, i}.low_peaks.index(end)
-            flag2 = 1;
-        else
-            flag2 = 0;
-        end
-
+            
+            if flag1 == 1 && flag2 == 1 % case 1 - should not happen!
+                
+                Trials_encoder_events{1, i}.Case = 1;
+    
+                Trials_encoder_events{1, i}.low_peaks.index(1) = [];
+                Trials_encoder_events{1, i}.low_peaks.time(1) = [];
+                Trials_encoder_events{1, i}.low_peaks.value(1) = [];
+    
+                Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index(1:end-1);
+                Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+    
+                Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index;
+                Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
         
-        if flag1 == 1 && flag2 == 1 % case 1 - should not happen!
-            
-            Trials_encoder_events{1, i}.Case = 1;
-
-            Trials_encoder_events{1, i}.low_peaks.index(1) = [];
-            Trials_encoder_events{1, i}.low_peaks.time(1) = [];
-            Trials_encoder_events{1, i}.low_peaks.value(1) = [];
-
-            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index(1:end-1);
-            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
-
-            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index;
-            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+            elseif flag1 == 1 && flag2 == 0 % case 2 - should not happen!
+                
+                Trials_encoder_events{1, i}.Case = 2;
     
-        elseif flag1 == 1 && flag2 == 0 % case 2 - should not happen!
-            
-            Trials_encoder_events{1, i}.Case = 2;
-
-            Trials_encoder_events{1, i}.low_peaks.index(1) = [];
-            Trials_encoder_events{1, i}.low_peaks.time(1) = [];
-            Trials_encoder_events{1, i}.low_peaks.value(1) = [];
-
-            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index;
-            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
-
-            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index(1:end-1);
-            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+                Trials_encoder_events{1, i}.low_peaks.index(1) = [];
+                Trials_encoder_events{1, i}.low_peaks.time(1) = [];
+                Trials_encoder_events{1, i}.low_peaks.value(1) = [];
     
-        elseif flag1 == 0 && flag2 == 1 % case 3
-            
-            Trials_encoder_events{1, i}.Case = 3;
-
-            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index(1:end-1);
-            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
-
-            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index;
-            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
-
+                Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index;
+                Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
     
-        elseif flag1 == 0 && flag2 == 0 % case 4
-            
-            Trials_encoder_events{1, i}.Case = 4;
-
-            Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index;
-            Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
-
-            Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index(1:end-1);
-            Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
-
+                Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index(1:end-1);
+                Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+        
+            elseif flag1 == 0 && flag2 == 1 % case 3
+                
+                Trials_encoder_events{1, i}.Case = 3;
+    
+                Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index(1:end-1);
+                Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+    
+                Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index;
+                Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+    
+        
+            elseif flag1 == 0 && flag2 == 0 % case 4
+                
+                Trials_encoder_events{1, i}.Case = 4;
+    
+                Trials_encoder_events{1, i}.Flexion_Start = Trials_encoder_events{1, i}.high_peaks.index;
+                Trials_encoder_events{1, i}.Flexion_End   = Trials_encoder_events{1, i}.low_peaks.index;
+    
+                Trials_encoder_events{1, i}.Extension_Start = Trials_encoder_events{1, i}.low_peaks.index(1:end-1);
+                Trials_encoder_events{1, i}.Extension_End   = Trials_encoder_events{1, i}.high_peaks.index(2:end);
+    
+            end
         end
-
     end
 
 
@@ -684,19 +693,18 @@ for subject = subjects
     
 
     %% Add Events with Flexion & Extension to the EEG file 
-    [EEG, eventnumbers] = pop_importevent(EEG, 'event', ...
+    [EEG, ~] = pop_importevent(EEG, 'event', ...
               new_filename, 'fields', {'type', 'latency','desc' }, ...
               'append', 'no', 'align', NaN, 'skipline', 1, 'timeunit', 1E-3);
 
-    
-    %% reject
+
+
+    %% Reject non-experimental periods
     EEG = eeg_eegrej(EEG, removeindices);
 
     
     %% processing wrappers for basic processing and AMICA
     
-    pool = gcp;
-
     % do basic preprocessing, line noise removal, and channel interpolation
 	[ALLEEG, EEG_preprocessed, CURRENTSET] = bemobil_process_all_EEG_preprocessing(subject, bemobil_config, ALLEEG, EEG, CURRENTSET, force_recompute);
 

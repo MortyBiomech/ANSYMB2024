@@ -16,20 +16,37 @@ function streams = xdf_load_matlab(subject_id, rawdata_path)
             
             streams_path = [files_path, items(k).name, filesep, ...
                 'eeg', filesep];
-            xdf_files = dir(streams_path);
+            xdf_files = dir(fullfile(streams_path, '*.xdf'));
             
-            % Check if the file name does not contain 'old' in it
-            for j = 1:length(xdf_files)
-                
-                if ~xdf_files(j).isdir ...
-                        && ~contains(xdf_files(j).name, 'old')
-                    streams{1,k} = struct('dataset', ...
-                        load_xdf(fullfile(streams_path, ...
-                        xdf_files(j).name)));
+            if length(xdf_files) > 1
+                % Prepare data for GUI
+                file_names = {xdf_files.name};
+                file_sizes = [xdf_files.bytes];
+
+                % Display GUI for user to select and order files
+                [selected_files, order] = show_gui_for_file_selection(file_names, file_sizes);
+
+                % Load and concatenate selected files
+                concatenated_stream = [];
+                for idx = 1:length(order)
+                    if ~strcmpi(selected_files{order(idx)}, 'Do not Load')
+                        file_path = fullfile(streams_path, selected_files{order(idx)});
+                        current_stream = load_xdf(file_path);
+                        if isempty(concatenated_stream)
+                            concatenated_stream = current_stream;
+                        else
+                            concatenated_stream = concatenate_same_session(concatenated_stream, current_stream);
+                        end
+                    end
                 end
 
+                % Save the concatenated stream into the cell array
+                streams{1,k} = struct('dataset', concatenated_stream);
+            else
+                % If only one file, load it directly
+                file_path = fullfile(streams_path, xdf_files(1).name);
+                streams{1,k} = struct('dataset', load_xdf(file_path));
             end
-
         end
 
     end
@@ -41,5 +58,4 @@ function streams = xdf_load_matlab(subject_id, rawdata_path)
     % Remove the empty cells
     streams(emptyCells) = [];
 
- 
 end

@@ -1,5 +1,5 @@
 function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_list, ...
-    epoch_type, data_path, main_project_folder)
+    epoch_type, features_from_epochs, data_path, main_project_folder)
 
     ROIs = struct();
     for i = 1:length(all_STUDY_names)
@@ -98,4 +98,32 @@ function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_lis
 
     end
 
+
+    %% Save ROI (check if there is a older version, save a new one)
+    classisfication_path = [data_path, '8_classification\'];
+    ROIs_features_path = [classisfication_path, 'ROIs_features'];
+    
+    % Define the base name and extension
+    baseName = 'ROIs';
+    suffix = features_from_epochs;
+    folder = ROIs_features_path; 
+    extension = '.mat'; 
+    
+    % Initialize version number
+    version = 0;
+    fileName = sprintf('%s_%d_%s%s', baseName, version, suffix, extension);
+    fullFilePath = fullfile(folder, fileName);
+    
+    % Increment version until a unique file name is found
+    while exist(fullFilePath, 'file') == 2
+        version = version + 1;
+        fileName = sprintf('%s_%d_%s%s', baseName, version, suffix, extension);
+        fullFilePath = fullfile(folder, fileName);
+    end
+    
+    % Save your file
+    save(fullFilePath, 'ROIs'); 
+    disp(['File saved as: ' fileName]);
+
 end
+make_timewarp
