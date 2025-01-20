@@ -22,11 +22,14 @@ end
 % (2) main_study_brain_ICs_RV-15.study
 
 % Define subjects
-subject_list = [5, 6, 7, 8, 9, 10];  % List of subject IDs
+subject_list = 5:18;  % List of subject IDs
+
 
 %% calling function to create and save the main study files
-create_and_save_main_study_files(subject_list, data_path, processed_data_path, ALLEEG)
+% create_and_save_main_study_files(subject_list, data_path, processed_data_path, ALLEEG)
 
+% Note:
+%      - load the existing Study (main_study_potential_brain_RV-15)
 
 %% Compute the pre-cluster
 clustering_weights = struct();
@@ -58,10 +61,10 @@ out_filepath = study_folder;
 % Right_PreMot_SuppMot = [28, -1, 51]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Right_VisMotor = [23, -60, 61]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 % Right_PrimVisual = [11, -78, 9]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Right_PrimAuditory = [50, -21, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+Right_PrimAuditory = [50, -21, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 
-ROI = Left_Dorsal_ACC;
-cluster_ROI_name  = 'Left_Dorsal_ACC';
+ROI = Right_PrimAuditory;
+cluster_ROI_name  = 'Right_PrimAuditory';
 cluster_ROI_MNI.x = ROI(1);
 cluster_ROI_MNI.y = ROI(2);
 cluster_ROI_MNI.z = ROI(3);
@@ -106,7 +109,7 @@ filename_multivariate_data = [cluster_ROI_name, '_multivariate_data'];
 
 
 N = floor(size(STUDY.etc.preclust.preclustdata, 1) / size(subject_list, 2));
-number_of_clusters = [N-2:N+2];
+number_of_clusters = N-2:N+2;
 score_NCluster = zeros(length(number_of_clusters),2);
 
 for i = 1:numel(number_of_clusters)
@@ -141,7 +144,9 @@ N = score_NCluster(N_idx, 2);
     filepath_clustering_solutions, filename_clustering_solutions, ...
     filepath_multivariate_data, filename_multivariate_data);
 
-beep
+
+sound(sin(2*pi*700*(0:1/44100:0.7)), 44100);
+
 
 %% End of code - Remove the folder and its subfolders from the MATLAB path
 rmpath(genpath(main_project_folder));

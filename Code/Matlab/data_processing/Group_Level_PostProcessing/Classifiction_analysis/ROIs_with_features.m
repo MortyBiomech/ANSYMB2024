@@ -72,7 +72,7 @@ function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_lis
         else
 
             % frequencies of the Power Spectral Density
-            [data, frequencies] = calculate_PSD(data);
+            [data, frequencies] = calculate_PSD(data, Trials_Info);
             for j = 1:length(all_STUDY_files)
                 
                 subject_sets_indx = ...
@@ -126,4 +126,4 @@ function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_lis
     disp(['File saved as: ' fileName]);
 
 end
-make_timewarp
+% make_timewarp

@@ -98,10 +98,6 @@ function Trials_Info = Main_event_selection(input_streams, ...
         1, length(Trials_encoder_events));
 
 
-    
-    %% Loop over all trials to fill the structure of events 
-    parpool('Threads', 6);
-    
     %% Filling the "General" field
     for i = 1:length(Trials_Info)
 
@@ -161,13 +157,18 @@ function Trials_Info = Main_event_selection(input_streams, ...
             interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
 
         % flextoflex start & end
-        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end-1));
+        if Trials_Info{1, i}.General.Case == 3
+            Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end));
+        elseif Trials_Info{1, i}.General.Case == 4
+            Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end-1));
+        end
         Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_indx = ...
             interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
 
-        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_End(2:end));
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Extension_End(1:end));
         Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_end_indx = ...
             interp1(All_EEG_time, 1:length(All_EEG_time), Exp_timing, 'nearest', 'extrap');
+        
 
     end
     
@@ -210,11 +211,15 @@ function Trials_Info = Main_event_selection(input_streams, ...
             interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
 
         % flextoflex start & end
-        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end-1));
+        if Trials_Info{1, i}.General.Case == 3
+            Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end));
+        elseif Trials_Info{1, i}.General.Case == 4
+            Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_Start(1:end-1));
+        end
         Trials_Info{1, i}.Events.EMG_stream.flextoflex_start_indx = ...
             interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
 
-        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Flexion_End(2:end));
+        Exp_timing = All_Experiment_time(Trials_encoder_events{1, i}.Extension_End(1:end));
         Trials_Info{1, i}.Events.EMG_stream.flextoflex_end_indx = ...
             interp1(All_EMG_time, 1:length(All_EMG_time), Exp_timing, 'nearest', 'extrap');
 
@@ -253,10 +258,15 @@ function Trials_Info = Main_event_selection(input_streams, ...
             Trials_encoder_events{1, i}.Extension_End;
 
         % flextoflex start & end
-        Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_indx = ...
-            Trials_encoder_events{1, i}.Flexion_Start(1:end-1);
+        if Trials_Info{1, i}.General.Case == 3
+            Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_indx = ...
+                Trials_encoder_events{1, i}.Flexion_Start(1:end);
+        elseif Trials_Info{1, i}.General.Case == 4
+            Trials_Info{1, i}.Events.EXP_stream.flextoflex_start_indx = ...
+                Trials_encoder_events{1, i}.Flexion_Start(1:end-1);
+        end
         Trials_Info{1, i}.Events.EXP_stream.flextoflex_end_indx = ...
-            Trials_encoder_events{1, i}.Flexion_End(2:end);
+            Trials_encoder_events{1, i}.Extension_End(1:end);
 
     end
     
@@ -287,25 +297,16 @@ function Trials_Info = Main_event_selection(input_streams, ...
         end
         
         % flextoflex start & end
-        Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_indx = ...
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(1:end-1);
+        if Trials_Info{1, i}.General.Case == 3
+            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_indx = ...
+                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(1:end);
+        elseif Trials_Info{1, i}.General.Case == 4
+            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_start_indx = ...
+                Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(1:end-1);
+        end
         Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flextoflex_end_indx = ...
-            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.flexion_start_indx(2:end);
+            Trials_Info{1, i}.Events.EEG_stream.Preprocessed.extension_end_indx(1:end);
 
-    end
-
-
-    %% Correct the trials description
-    % If you found any problem in the next data processing steps (like data
-    % epoching) come back here and update the trials description with
-    % proper explanation. For example, in subject 10, trial 196, EEG data
-    % was lost due to some issues in connection and the description was
-    % corrected to be "Experiment - EEG Data Loss". Later we can use this
-    % description to exclude the problematic trials from our analysis.
-    problematic_trials = [196];
-    for i = 1:numel(problematic_trials)
-        Trials_Info{1, problematic_trials(i)}.General.Description = ...
-            'Experiment - EEG Data Loss';
     end
 
 

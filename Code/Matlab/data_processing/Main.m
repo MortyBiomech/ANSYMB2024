@@ -12,7 +12,7 @@ addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127')
 addpath('C:\Morteza\Toolboxes\Fieldtrip\fieldtrip-20231127\fileio')
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 14;
+subject_id = 18;
 rawdata_path = [study_path, '0_source_data\'];
 output = runs_concatenated(subject_id, rawdata_path);
 
@@ -157,7 +157,7 @@ bemobil_bids2set(config);
 bemobil_config = BeMoBIL_Configuration(study_path);
 
 % enter all subjects to process here (you can split it up in more MATLAB instances if you have more CPU power and RAM)
-subjects = 14; 
+subjects = 18; 
 
 % set to 1 if all files should be computed, independently of whether they are present on disk or not
 force_recompute = 0; 
@@ -267,11 +267,15 @@ for subject = subjects
     score_press_indx_EEG = ...
         knnsearch(All_EEG_time', score_press_time_Expdata');
     score_press_latency_EEG = EEG.times(score_press_indx_EEG); % time unit: milisecond
-
+    
+    % score_press(43) = [];
+    % score_press_time_Expdata(43) = [];
+    % score_press_indx_EEG(43) = [];
+    % score_press_latency_EEG(43) = [];
     
     %% Define and Add Events
-    if subject_id == 14
-        no_PAM_trials = [1:3, 39:41, 42:44, 76:78, 79:81, 112:114, 115:117, 148:150];
+    if subject_id == 18
+        no_PAM_trials = [1:3, 40:42, 43:45, 76:78, 79:81, 112:114, 115:117, 148:150];
         familiarization_trials = 4:9;
     end
     % Import Trials information
@@ -481,9 +485,9 @@ for subject = subjects
 
 
     %% load the Trials_encoder_events fully defined
-    Trials_encoder_events = load([study_path, '6_0_Trials_Info_and_Events\sub-', ...
-        num2str(subject_id), filesep, 'sub-', num2str(subject_id), ...
-        '_Trials_encoder_events.mat']);
+    % Trials_encoder_events = load([study_path, '6_0_Trials_Info_and_Events\sub-', ...
+    %     num2str(subject_id), filesep, 'sub-', num2str(subject_id), ...
+    %     '_Trials_encoder_events.mat']);
 
 
     %% Add flexion and extension indexes to Trials_encoder_events structure (based on Exp stream indexes)
@@ -721,3 +725,4 @@ subject
 disp('PROCESSING DONE! YOU CAN CLOSE THE WINDOW NOW!')
 
 
+% rmpath(genpath('C:\Morteza\MyProjects\ANSYMB2024'))

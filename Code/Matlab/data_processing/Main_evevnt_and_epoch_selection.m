@@ -11,7 +11,7 @@ rawdata_path = [data_path, '0_source_data\'];
 
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 10;
+subject_id = 17;
 output = runs_concatenated(subject_id, rawdata_path);
 
 
@@ -35,43 +35,13 @@ filepath = [data_path, '5_single-subject-EEG-analysis\', 'sub-', ...
 EEG = pop_loadset('filename', filename, 'filepath', filepath);
 
 
-%% Finding peaks of Encoder data for using in App to remove undesired peaks
-% [start_beep, ...
-%     finish_beep, XLimits, ...
-%     pks_high_peaks, locs_high_peaks, ...
-%     pks_low_peaks, locs_low_peaks, ...
-%     trial_pks_high_peaks, trial_locs_high_peaks, ...
-%     trial_pks_low_peaks, trial_locs_low_peaks, ...
-%     N_Trials, ...
-%     Trials_encoder_events] = find_peaks_and_select_events(output);
-
-
-%% Matlab App for deselecting undesired peaks of Encoder data
-% find_flexion_extension_events
+%% Create the Trial_Info.mat file
 filepath = [data_path, '6_0_Trials_Info_and_Events', filesep, 'sub-', ...
     num2str(subject_id)];
 filename = ['sub-', num2str(subject_id),'_Trials_encoder_events.mat'];
 load(fullfile(filepath, filename))
 
-
-% %% Matlab App for marking the bad trials to exclude from post-processing
-% % bad_trials_EEG_based = [];
-% % mark_bad_trials_of_EEG_data
-% % %%
-% % filepath = [data_path, '6_0_Trials_Info_and_Events\', 'sub-', ...
-% %     num2str(subject_id), filesep];
-% % filename = 'bad_trials_EEG_based.mat';
-% % save(fullfile(filepath, filename), 'bad_trials_EEG_based')
-% filepath = [data_path, '6_0_Trials_Info_and_Events', filesep, 'sub-', ...
-%     num2str(subject_id)];
-% filename = 'bad_trials_EEG_based.mat';
-% load(fullfile(filepath, filename))
-
-%% Find all events based on entire trials, flexions, extension, and
-% flextoflex  epochs and store in a big structure (Trials_Info.mat)
-
-% for subject 10:
-sessions_trial_id = [57, 108, 159, 210]; 
+sessions_trial_id = [42, 78, 114, 150];  % subject 18
 
 Trials_Info = Main_event_selection(output, ...
                                    EEG, ...
@@ -83,13 +53,10 @@ Trials_Info = Main_event_selection(output, ...
 
 %% EMG sensors id 
 % sensors which were used for measuring muscles activity (Delsys System)
-EMG_sensor_id = [2, 3, 4, 5, 6, 7];
+EMG_sensor_id = [2, 3, 4, 5, 8, 9];
 
 
 %% Split dataset based on events
-% Note:
-%      Epoch selection was performed on subject 7 and datasets are stored.
-
 Main_epoch_selection(output, EEG, Trials_Info, EMG_sensor_id, ...
     subject_id, data_path)
 

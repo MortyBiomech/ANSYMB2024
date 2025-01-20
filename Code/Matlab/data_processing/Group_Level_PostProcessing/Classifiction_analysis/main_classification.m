@@ -16,7 +16,7 @@ if ~exist('ALLCOM','var')
 end
 
 % Define subjects
-subject_list = [5, 6, 7, 8, 9, 10];  % List of subject IDs
+subject_list = 5:18;  % List of subject IDs
 
 for i = 1:length(subject_list)
     file_name = ['sub-', num2str(subject_list(i)), '_cleaned_with_ICA.set'];
@@ -44,8 +44,8 @@ end
 
 
 %% Creat a metafile containg all ROIs and Subjects/ICs RMS features
-epoch_type = 'Epochs_Flexion_based.mat';
-features_from_epochs = 'Flexion';
+epoch_type = 'Epochs_FlextoFlex_based.mat';
+features_from_epochs = 'FlextoFlex';
 ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_list, ...
     epoch_type, features_from_epochs, data_path, main_project_folder);
 

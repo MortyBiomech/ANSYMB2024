@@ -90,7 +90,7 @@ function main_epoch_selection_ExtensionsBased(input_streams, ...
     
     for i = 1:length(Trials_Info)
     
-        if ~endsWith(Trials_Info{1, i}.General.Description, 'Data Loss')
+        if ~contains(Trials_Info{1, i}.General.Description, 'Reject')
             %% EEG_stream
             % Define indices
             raw_start_indices = Trials_Info{1, i}.Events.EEG_stream.Raw.extension_start_indx;
