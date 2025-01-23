@@ -1,4 +1,4 @@
-function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
+function calibrated_Force = save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     source_data_path, data_path)
 
     %% Load Force sensor data
@@ -24,7 +24,7 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     %% Force sensor calibration per subject
     data0 = load_xdf([source_data_path, 'sub-', ...
         num2str(subject), '\ses-S001', '\eeg\', ...
-        'sub-', num2str(11), '_ses-S001_task-Default_run-001_eeg.xdf']);
+        'sub-', num2str(subject), '_ses-S001_task-Default_run-001_eeg.xdf']);
 
     for i = 1:length(data0)
         if strcmp(data0{1, i}.info.name, 'Encoder_Pressure_Preference_Force')
@@ -35,6 +35,7 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     
     %% find the point to zoom on x axis
     plot(data0{1, cell_id}.time_series(5, :))
+    title('select the x point to change the x-limit')
     [xSelected, ~] = ginput(1);
     X_max_onplot = xSelected; 
     close all
@@ -43,15 +44,16 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     figure();
     plot(data0{1, cell_id}.time_series(5, :))
     xlim([0 X_max_onplot])
+    title('select the start and end of raw force data for 2 kg weigth')
 
     [xSelected, ~] = ginput(2);
     
     xmin = min(xSelected);
     xmax = max(xSelected);
     
-    x = 1:size(data0{1, 3}.time_series, 2);
+    x = 1:size(data0{1, cell_id}.time_series, 2);
     idx = x >= xmin & x <= xmax;
-    y_2_kg = data0{1, 3}.time_series(5, idx);
+    y_2_kg = data0{1, cell_id}.time_series(5, idx);
     mean_y_2_kg = mean(y_2_kg);
     
     close all
@@ -61,17 +63,18 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     figure();
     plot(data0{1, cell_id}.time_series(5, :))
     xlim([0 X_max_onplot])
+    title('select the start and end of raw force data for 2.5 kg weigth')
 
     [xSelected, ~] = ginput(2);
-    
+
     xmin = min(xSelected);
     xmax = max(xSelected);
-    
-    x = 1:size(data0{1, 3}.time_series, 2);
+
+    x = 1:size(data0{1, cell_id}.time_series, 2);
     idx = x >= xmin & x <= xmax;
-    y_2o5_kg = data0{1, 3}.time_series(5, idx);
+    y_2o5_kg = data0{1, cell_id}.time_series(5, idx);
     mean_y_2o5_kg = mean(y_2o5_kg);
-    
+
     close all
     
 
@@ -79,15 +82,16 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     figure();
     plot(data0{1, cell_id}.time_series(5, :))
     xlim([0 X_max_onplot])
+    title('select the start and end of raw force data for 4 kg weigth')
 
     [xSelected, ~] = ginput(2);
     
     xmin = min(xSelected);
     xmax = max(xSelected);
     
-    x = 1:size(data0{1, 3}.time_series, 2);
+    x = 1:size(data0{1, cell_id}.time_series, 2);
     idx = x >= xmin & x <= xmax;
-    y_4_kg = data0{1, 3}.time_series(5, idx);
+    y_4_kg = data0{1, cell_id}.time_series(5, idx);
     mean_y_4_kg = mean(y_4_kg);
     
     close all
@@ -96,6 +100,8 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     %% fit a linear model to the points
     F_known = [2 2.5 4]*9.81; % N
     Raw_sensor = [mean_y_2_kg mean_y_2o5_kg mean_y_4_kg];
+    % F_known = [2 4]*9.81; % N
+    % Raw_sensor = [mean_y_2_kg mean_y_4_kg];
     
     p = polyfit(Raw_sensor, F_known, 1);  % “1” means a 1st-order (linear) fit
     a = p(1);
@@ -114,7 +120,7 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     %% plot an initial figure to see the calibrated force data
     figure()
     hold on
-    trial = 100;
+    trial = 120;
     cellfun(@(s, e) plot(s, e, 'LineWidth', 2), ...
         data{1, trial}.EXP_stream.Times, F_cal{1, trial})
 
@@ -122,10 +128,19 @@ function save_calibrated_force(epoch_type, epoched_data_path, subject, ...
     xlabel('Time [s]')
     ylabel('Force [N]')
 
-    ylim([0 70])
+    % ylim([0 70])
 
 
     %% Save calibrated force data for each subject
-    mkdir([data_path, '9_'])
+    newFolderPath = fullfile([data_path, '9_EXP_Analysis\', 'sub-', num2str(subject)]);
+    if ~isfolder(newFolderPath)
+        mkdir(newFolderPath);
+    end
+
+    params = struct('formula', 'F_cal = a.*F_raw + b', 'a', a, 'b', b);
+    calibrated_Force = ...
+        struct('params', params, 'F_cal', {F_cal});
+    save([newFolderPath, filesep, 'calibrated_Force'], 'calibrated_Force');
+    
 
 end
