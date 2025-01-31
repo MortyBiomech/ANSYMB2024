@@ -50,8 +50,8 @@ ROIs_FlextoFlex_per_trial = data.(name{1});
 
 
 %% Initialize and fill the tables
-per_trial_or_all_epochs = 'per_trial';
-selected_ROI = ROIs_FlextoFlex_per_trial;
+per_trial_or_all_epochs = 'all_epochs';
+selected_ROI = ROIs_FlextoFlex_all_epochs;
 type = 'FlextoFlex'; % 'FlextoFlex' 'Extension' 'Flexion'
 classes = 'P1P6'; % 'P1P3P6' 'P1P6' 'P1P3' 'P3P6'
 
