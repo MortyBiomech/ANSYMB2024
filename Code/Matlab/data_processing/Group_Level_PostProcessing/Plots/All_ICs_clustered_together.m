@@ -29,9 +29,8 @@ end
 
 
 %% Load STUDY files
-cd(study_folder)
-load("all_STUDY_names.mat")
-load("all_STUDY_files.mat")
+load(fullfile(study_folder, 'all_STUDY_names.mat'))
+load(fullfile(study_folder, 'all_STUDY_files.mat'))
 
 
 %% Plot dipoles in 3D space with MRI slices
@@ -130,3 +129,6 @@ dipplot(dipole_struct, ...
     'dipolelength', 0, ...      % Length of the dipole bar
     'color', color, ...
     'spheres', 'on');           % Show dipoles as spheres
+
+hLight = light;
+set(hLight, 'Position', [0 1 0]);

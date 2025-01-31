@@ -29,7 +29,7 @@ subject_list = 5:18;  % List of subject IDs
 % create_and_save_main_study_files(subject_list, data_path, processed_data_path, ALLEEG)
 
 % Note:
-%      - load the existing Study (main_study_potential_brain_RV-15)
+%      - load the existing Study (main_study_potential_brain_ICs_RV-15)
 
 %% Compute the pre-cluster
 clustering_weights = struct();
@@ -51,20 +51,21 @@ out_filepath = study_folder;
 %% Implementing the repeated clustering
 
 % select the region of interest (ROI) - MNI Coordinates
-% Left_PrimMotor = [-36, -19, 48];
-% Left_PreMot_SuppMot = [-28, -2, 52]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Left_Paracentral_Lobule = [0, -20, 62]; % ref: https://pmc.ncbi.nlm.nih.gov/articles/PMC5663902/table/Tab2/
-% Left_Dorsal_ACC = [-5, 39, 20]; % ACC: Anterior Cingulate Cortex - ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Left_VisMotor = [-18, -67, 40]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Left_PrimVisual = [-11, -81, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Left_PrimAuditory = [-52, -19, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Right_PreMot_SuppMot = [28, -1, 51]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Right_VisMotor = [23, -60, 61]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-% Right_PrimVisual = [11, -78, 9]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
-Right_PrimAuditory = [50, -21, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%   Left_PrimMotor = [-36, -19, 48];
+%%% Left_PreMot_SuppMot = [-28, -2, 52]; new_coordinates: [-28, -6, 45] % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%   Left_Paracentral_Lobule = [0, -20, 62]; % ref: https://pmc.ncbi.nlm.nih.gov/articles/PMC5663902/table/Tab2/
+%   Left_Paracentral_Lobule (Left_PrimMotor) = [-4, -20, 62]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html 
+%   Left_Dorsal_ACC = [-5, 39, 20]; % ACC: Anterior Cingulate Cortex - ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%%% Left_VisMotor = [-18, -67, 40]; new_coordinates: [-35, -45, 50] % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%%% Left_PrimVisual = [-11, -81, 7]; new_coordinates: [-17, -84, 2] % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%   Left_PrimAuditory = [-52, -19, 7]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%   Right_PreMot_SuppMot = [28, -1, 51]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%   Right_VisMotor = [23, -60, 61]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+%%% Right_PrimVisual = [11, -78, 9]; new_coordinates: [18, -85, 5]  % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
+Left_PreMot_SuppMot = [-28, -6, 45]; % ref: https://bioimagesuiteweb.github.io/webapp/mni2tal.html
 
-ROI = Right_PrimAuditory;
-cluster_ROI_name  = 'Right_PrimAuditory';
+ROI = Left_PreMot_SuppMot;
+cluster_ROI_name  = 'Left_PreMot_SuppMot';
 cluster_ROI_MNI.x = ROI(1);
 cluster_ROI_MNI.y = ROI(2);
 cluster_ROI_MNI.z = ROI(3);
@@ -84,7 +85,7 @@ n_iterations = 1000;
 %                          - distance from ROI, 
 %                          - mahalanobis distance from median of multivariate distribution
 %                            (put this very high to get the most "normal" solution)
-quality_measure_weights = [3, -1, -1, -1, -2, -100];
+quality_measure_weights = [3, -1.1, -1, -1, -2, -100];
 
 % whether or not the clustering should be done (it takes a lot of time).
 do_clustering = 1;

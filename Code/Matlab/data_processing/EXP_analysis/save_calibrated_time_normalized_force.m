@@ -75,49 +75,26 @@ function save_calibrated_time_normalized_force(trials_info, data, subject)
         Force_data{1, Lepoch_p6(Lepoch_p6_median_indx, 1)}.Events(Lepoch_p6(Lepoch_p6_median_indx, 2), 3) - ...
         Force_data{1, Lepoch_p6(Lepoch_p6_median_indx, 1)}.Events(Lepoch_p6(Lepoch_p6_median_indx, 2), 2);
     
-    
-    for i = 1:length(Force_data)
-        if ismember(i, condition_indices.P1)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                extension_indx = events_indxs(j, 2) - events_indxs(j, 1) + 1;
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 2), force(1:extension_indx), ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 2), L_flexion_p1_median)), ...
-                     interp1(events_indxs(j, 2)+1:events_indxs(j, 3), force(extension_indx+1:end), ...
-                        linspace(events_indxs(j, 2)+1, events_indxs(j, 3), L_extension_p1_median))]);
+
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % special case for subject 12
+    % due to some technical issues force data is corrupted in sessions 3
+    % and 4 in this subject and will be ignored in the final illustration
+    ignore_trials = [];
+    if subject == 12
+        for i = 1:length(Force_data)
+            if ismember(Force_data{1, i}.General.Session, [3, 4])
+                ignore_trials = cat(2, ignore_trials, i);
             end
-            
-        elseif ismember(i, condition_indices.P3)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                extension_indx = events_indxs(j, 2) - events_indxs(j, 1) + 1;
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 2), force(1:extension_indx), ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 2), L_flexion_p3_median)), ...
-                     interp1(events_indxs(j, 2)+1:events_indxs(j, 3), force(extension_indx+1:end), ...
-                        linspace(events_indxs(j, 2)+1, events_indxs(j, 3), L_extension_p3_median))]);
-            end
-            
-        elseif ismember(i, condition_indices.P6)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                extension_indx = events_indxs(j, 2) - events_indxs(j, 1) + 1;
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 2), force(1:extension_indx), ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 2), L_flexion_p6_median)), ...
-                     interp1(events_indxs(j, 2)+1:events_indxs(j, 3), force(extension_indx+1:end), ...
-                        linspace(events_indxs(j, 2)+1, events_indxs(j, 3), L_extension_p6_median))]);
-            end
-            
         end
     end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+    Force_data = add_length_normalized_force(Force_data, condition_indices, ignore_trials, ...
+        L_flexion_p1_median, L_extension_p1_median, ...
+        L_flexion_p3_median, L_extension_p3_median, ...
+        L_flexion_p6_median, L_extension_p6_median);
     
     
     %% Calculate the mean and std per pressure
@@ -141,7 +118,7 @@ function save_calibrated_time_normalized_force(trials_info, data, subject)
     
     
     %% plot the calibrated force data (mean +- std)
-    
+
     mean_force_p1 = mean(F_p1, 1);
     std_force_p1 = std(F_p1, 1);
     mean_force_p3 = mean(F_p3, 1);
@@ -212,49 +189,24 @@ function save_calibrated_time_normalized_force(trials_info, data, subject)
     end
 
 
-    for i = 1:length(Force_data)
-        if ismember(i, condition_indices.P1)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                extension_indx = events_indxs(j, 2) - events_indxs(j, 1) + 1;
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 2), force(1:extension_indx), ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 2), L_flexion_p1_median)), ...
-                     interp1(events_indxs(j, 2)+1:events_indxs(j, 3), force(extension_indx+1:end), ...
-                        linspace(events_indxs(j, 2)+1, events_indxs(j, 3), L_extension_p1_median))]);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % special case for subject 12
+    % due to some technical issues force data is corrupted in sessions 3
+    % and 4 in this subject and will be ignored in the final illustration
+    ignore_trials = [];
+    if subject == 12
+        for i = 1:length(Force_data)
+            if ismember(Force_data{1, i}.General.Session, [3, 4])
+                ignore_trials = cat(2, ignore_trials, i);
             end
-            
-        elseif ismember(i, condition_indices.P3)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                extension_indx = events_indxs(j, 2) - events_indxs(j, 1) + 1;
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 2), force(1:extension_indx), ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 2), L_flexion_p3_median)), ...
-                     interp1(events_indxs(j, 2)+1:events_indxs(j, 3), force(extension_indx+1:end), ...
-                        linspace(events_indxs(j, 2)+1, events_indxs(j, 3), L_extension_p3_median))]);
-            end
-            
-        elseif ismember(i, condition_indices.P6)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                extension_indx = events_indxs(j, 2) - events_indxs(j, 1) + 1;
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 2), force(1:extension_indx), ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 2), L_flexion_p6_median)), ...
-                     interp1(events_indxs(j, 2)+1:events_indxs(j, 3), force(extension_indx+1:end), ...
-                        linspace(events_indxs(j, 2)+1, events_indxs(j, 3), L_extension_p6_median))]);
-            end
-            
         end
     end
-
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    Force_data = add_length_normalized_force(Force_data, condition_indices, ignore_trials, ...
+        L_flexion_p1_median, L_extension_p1_median, ...
+        L_flexion_p3_median, L_extension_p3_median, ...
+        L_flexion_p6_median, L_extension_p6_median);
 
 
 
@@ -279,9 +231,9 @@ function save_calibrated_time_normalized_force(trials_info, data, subject)
     mean_force_p6 = mean(F_p6, 1);
     std_force_p6 = std(F_p6, 1);
 
-    time_p1 = linspace(0, 100, Lepoch_p1_median);
-    time_p3 = linspace(0, 100, Lepoch_p3_median);
-    time_p6 = linspace(0, 100, Lepoch_p6_median);
+    time_p1 = linspace(0, 100, Lepoch_median);
+    time_p3 = linspace(0, 100, Lepoch_median);
+    time_p6 = linspace(0, 100, Lepoch_median);
     
 
  
@@ -337,56 +289,23 @@ function save_calibrated_time_normalized_force(trials_info, data, subject)
     Lepoch_p3_median = median(Lepoch_p3(:, 3));
     Lepoch_p6_median = median(Lepoch_p6(:, 3));
 
-    p1_extension_start_percent = [];
-    p3_extension_start_percent = [];
-    p6_extension_start_percent = [];
-   
-    for i = 1:length(Force_data)
-        if ismember(i, condition_indices.P1)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 3), force, ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 3), Lepoch_p1_median))]);
-                
-                [~, indx] = min( abs(Force_data{1, i}.F_cal_length_normalized(j, :) - ...
-                    force(1, events_indxs(j, 2) - events_indxs(j, 1) + 1)) );
-                p1_extension_start_percent = cat(1, p1_extension_start_percent, indx/Lepoch_p1_median);
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % special case for subject 12
+    % due to some technical issues force data is corrupted in sessions 3
+    % and 4 in this subject and will be ignored in the final illustration
+    ignore_trials = [];
+    if subject == 12
+        for i = 1:length(Force_data)
+            if ismember(Force_data{1, i}.General.Session, [3, 4])
+                ignore_trials = cat(2, ignore_trials, i);
             end
-            
-        elseif ismember(i, condition_indices.P3)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 3), force, ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 3), Lepoch_p3_median))]);
-
-                [~, indx] = min( abs(Force_data{1, i}.F_cal_length_normalized(j, :) - ...
-                    force(1, events_indxs(j, 2) - events_indxs(j, 1) + 1)) );
-                p3_extension_start_percent = cat(1, p3_extension_start_percent, indx/Lepoch_p3_median);
-            end
-            
-        elseif ismember(i, condition_indices.P6)
-            events_indxs = Force_data{1, i}.Events;
-            for j = 1:length(Force_data{1, i}.F_cal_not_length_normalized)
-                force = Force_data{1, i}.F_cal_not_length_normalized{j};
-                Force_data{1, i}.F_cal_length_normalized = cat(1, ...
-                    Force_data{1, i}.F_cal_length_normalized, ...
-                    [interp1(events_indxs(j, 1):events_indxs(j, 3), force, ...
-                        linspace(events_indxs(j, 1), events_indxs(j, 3), Lepoch_p6_median))]);
-
-
-                [~, indx] = min( abs(Force_data{1, i}.F_cal_length_normalized(j, :) - ...
-                    force(1, events_indxs(j, 2) - events_indxs(j, 1) + 1)) );
-                p6_extension_start_percent = cat(1, p6_extension_start_percent, indx/Lepoch_p6_median);
-            end
-            
         end
     end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    [Force_data, p1_extension_start_percent, p3_extension_start_percent, p6_extension_start_percent] = ...
+        add_length_normalized_force_option3(Force_data, condition_indices, ignore_trials, ...
+        Lepoch_p1_median, Lepoch_p3_median, Lepoch_p6_median);
     
     
 
