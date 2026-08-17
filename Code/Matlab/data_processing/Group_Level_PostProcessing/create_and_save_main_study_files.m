@@ -3,22 +3,23 @@ function create_and_save_main_study_files(subject_list, data_path, processed_dat
     
     % Load datasets into ALLEEG
     for i = 1:length(subject_list)
-        file_name = ['sub-', num2str(subject_list(i)), '_cleaned_with_ICA.set'];
-        dataset_path = fullfile([processed_data_path, 'sub-', ...
-            num2str(subject_list(i)), filesep]);
+        file_name = ['sub-', num2str(subject_list(i)), '_cleaned_with_ICA_epoched.set'];
+        dataset_path = fullfile([processed_data_path, 'timewarp_test\Epoched_data\']);
         EEG = pop_loadset('filename', file_name, 'filepath', dataset_path);
         [ALLEEG, EEG, CURRENTSET] = eeg_store(ALLEEG, EEG, i);
     end
     
     
     %% Create STUDY main_study_all_ICs_RV-15
-    study_name = 'main_study_all_ICs_RV-15.study';
-    study_folder = [data_path, '7_STUDY'];
+    % study_name = 'main_study_all_ICs_RV-15.study';
+    % study_folder = [data_path, '7_STUDY'];
+    study_name = 'main_study_all_ICs_RV-15_epochedData.study';
+    study_folder = [data_path, '7_STUDY\Epoched_data'];
     
     % Create STUDY from loaded datasets using commands (RV <= 15%)
     commands = cell(1, length(subject_list));
     for i = 1:length(subject_list)
-        commands{i} = {'index', i, 'subject', num2str(subject_list(i)), ...
+        commands{i} = {'index', i, 'subject', ALLEEG(i).subject, ...
             'inbrain', 'on', 'dipselect', 0.15};
     end
     
@@ -37,9 +38,9 @@ function create_and_save_main_study_files(subject_list, data_path, processed_dat
     % all of the ICs and selecting potential brain components and reject other
     % non-brain sources.
 
-    % This function was run and brain ICs for subjects 5 to 10 were found.
-    % Brain_ICs = cortical_ICs_indentifier(subject_list, ALLEEG);
-    load Brain_PotentialBrain_AcceptedPotentialBrain.mat ICs
+    % This function was run and brain ICs for subjects 5 to 18 were saved.
+    % cortical_ICs_indentifier(subject_list, ALLEEG, STUDY);
+    % load Brain_PotentialBrain_AcceptedPotentialBrain.mat ICs
     
     subjects_ids_in_STUDY = unique(STUDY.cluster.sets, 'stable');
 
@@ -49,8 +50,8 @@ function create_and_save_main_study_files(subject_list, data_path, processed_dat
             subjects_ids_in_STUDY(i));
         
         all_RV_15_ICs = STUDY.cluster.comps(subjects_ids_index);
-        all_potential_brain_ICs = union(ICs{subjects_ids_in_STUDY(i), 1}, ...
-            ICs{subjects_ids_in_STUDY(i), 3});
+        all_potential_brain_ICs = [ICs{subjects_ids_in_STUDY(i), 1}; ...
+            ICs{subjects_ids_in_STUDY(i), 3}];
         
         [~, common_elements_indxs] = intersect(all_RV_15_ICs, all_potential_brain_ICs);
         indices_to_keep = subjects_ids_index(common_elements_indxs);
@@ -64,7 +65,7 @@ function create_and_save_main_study_files(subject_list, data_path, processed_dat
 
     
     % Save new STUDY with just potential Brain ICs
-    file_name = 'main_study_potential_brain_ICs_RV-15.study';
+    file_name = 'main_study_potential_brain_ICs_RV-15_epochedData.study';
 
     STUDY.name = file_name;
     

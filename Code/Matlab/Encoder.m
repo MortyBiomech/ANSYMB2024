@@ -1,7 +1,7 @@
 clc; clear; 
 
 %% Add LSL library
-addpath(genpath('C:\Morteza\LSL\liblsl-Matlab'))
+addpath(genpath('D:\Morteza\LSL\liblsl-Matlab'))
 
 %% Setting the variables
 Num_trials = 80; % How many times should the (1, 3, 6 bar) conditions repeat; 
@@ -13,7 +13,7 @@ freq_avg = 0.5; % Frequency of the reference movement
 
 %% defining the Arduino
 disp('Defining the Arduino...');
-a = arduino('COM8','Mega2560','Libraries','rotaryEncoder')
+a = arduino('COM16','Mega2560','Libraries','rotaryEncoder');
 disp('Defining the Encoder...');
 encoder = rotaryEncoder(a,'D2','D3',1000)
 
@@ -38,8 +38,8 @@ ExperimentPhase = 0;
 SessionNumber = 0;
 
 %% Read the data from the encoder
-Angle = []; Time_enc = []; Up_lim = []; Lo_lim = []; 
-Ref_trj = []; 
+Angle = []; Time_enc = []; Up_lim = []; Lo_lim = [];
+Ref_trj = [];
 
 figure();
 
@@ -59,7 +59,7 @@ while true
     end
 
     % Write the PWM duty cycle based on the mapped pressure
-    writePWMDutyCycle(a, 'D13', mappedPressure / 6);
+    % writePWMDutyCycle(a, 'D13', mappedPressure / 6);
 
     % Tracking path for the participant knee movement
     ref_trj = abs((lo_lim-up_lim)/2) * sin(2*pi*freq_avg*time) + ...
@@ -95,12 +95,12 @@ while true
 
     
     % Force sensor
-    force = readVoltage(a, 'A0');
+    % force = readVoltage(a, 'A0');
     % Force = [Force; force];
 
 
     Encoder_Pressure_Preference_Force = ...
-        [angle, ref_trj, mappedPressure, Preference, force, ...
+        [angle, ref_trj, mappedPressure, Preference, 0, ...
         auditory_input, score_press, ExperimentPhase, SessionNumber];
     outlet.push_sample(Encoder_Pressure_Preference_Force);
 

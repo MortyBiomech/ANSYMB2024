@@ -1,4 +1,4 @@
-function output_peaks = find_peaks_and_select_events(output)
+function output_peaks = find_peaks_and_select_events(output, subject_id)
 
 
     %% Extract the data
@@ -8,13 +8,23 @@ function output_peaks = find_peaks_and_select_events(output)
 
     %% find start and end of trials and movements
     % start_move event (second single beep, 2s after pressure change)
-    start_move = find(diff(All_Experiment(6, :)) == 1);
-    start_move = reshape(start_move, 2, []);
-    start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+    if subject_id > 9
+        start_move = find(diff(All_Experiment(6, :)) == 1);
+        start_move = reshape(start_move, 2, []);
+        start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+    else
+        start_move = find(diff(All_Experiment(6, :)) == 1);
+        start_move_time_Expdata = All_Experiment_time(start_move);
+    end
 
     % finish_beep event (20s after start_move event, double beep to stop movement)
-    finish_beep = find(diff(All_Experiment(6, :)) == -2);
-    finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+    if subject_id > 9
+        finish_beep = find(diff(All_Experiment(6, :)) == -2);
+        finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+    else
+        finish_beep = find(diff(All_Experiment(6, :)) == -1);
+        finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+    end
 
     
     %% find start and finish beep moments
@@ -31,23 +41,29 @@ function output_peaks = find_peaks_and_select_events(output)
     trial_pks_low_peaks   = [];
     trial_locs_low_peaks  = [];
     
+    if subject_id > 9
+        idx = 2;
+    else
+        idx = 1;
+    end
+
     for i = 1:length(start_move_time_Expdata)
         trial_locs_high_peaks = cat(2 , trial_locs_high_peaks, ...
             locs_high_peaks(1, ...
-            start_move(2, i) <= locs_high_peaks & ...
+            start_move(idx, i) <= locs_high_peaks & ...
             locs_high_peaks <= finish_beep(1, i)));
         trial_pks_high_peaks = cat(2, trial_pks_high_peaks, ...
             pks_high_peaks(1, ...
-            start_move(2, i) <= locs_high_peaks & ...
+            start_move(idx, i) <= locs_high_peaks & ...
             locs_high_peaks <= finish_beep(1, i)));
     
         trial_locs_low_peaks = cat(2, trial_locs_low_peaks, ...
             locs_low_peaks(1, ...
-            start_move(2, i) <= locs_low_peaks & ...
+            start_move(idx, i) <= locs_low_peaks & ...
             locs_low_peaks <= finish_beep(1, i)));
         trial_pks_low_peaks = cat(2, trial_pks_low_peaks, ...
             pks_low_peaks(1, ...
-            start_move(2, i) <= locs_low_peaks & ...
+            start_move(idx, i) <= locs_low_peaks & ...
             locs_low_peaks <= finish_beep(1, i)));
     end
 

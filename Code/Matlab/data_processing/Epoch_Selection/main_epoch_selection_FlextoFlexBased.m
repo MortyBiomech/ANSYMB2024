@@ -89,7 +89,9 @@ function main_epoch_selection_FlextoFlexBased(input_streams, ...
     extract_epoch_data = @(data, start_idx, end_idx) data(:, start_idx:end_idx);
     
     for i = 1:length(Trials_Info)
-        i
+        
+        if isempty(Trials_Info{1, i}.Events.EEG_stream.Raw.flextoflex_start_indx); continue; end
+        
         if ~contains(Trials_Info{1, i}.General.Description, 'Reject')
             %% EEG_stream
             % Define indices

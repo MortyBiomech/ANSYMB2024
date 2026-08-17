@@ -14,7 +14,7 @@ function ic_selection_gui(ALLEEG, ICs, subject_list)
     
     % IC Label below Subject Selector
     uicontrol(fig, 'Style', 'text', 'String', 'IC', 'Position', [30, 410, 40, 25]);
-    ic_label = uicontrol(fig, 'Style', 'text', 'String', num2str(ICs{current_subject_index, 2}(current_IC_index, 1)), 'Position', [100, 410, 40, 25]);
+    ic_label = uicontrol(fig, 'Style', 'text', 'String', num2str(ICs{current_subject_index, 2}(current_IC_index, 1)), 'Position', [100, 410, 300, 25], 'HorizontalAlignment','left');
     
     % Navigation Buttons aligned as per sketch
     uicontrol(fig, 'Style', 'pushbutton', 'String', 'Prev', 'Position', [30, 370, 60, 25], 'Callback', @prevCallback);
@@ -61,49 +61,57 @@ function ic_selection_gui(ALLEEG, ICs, subject_list)
     end
 
     function plotCallback(~, ~)
-        pop_prop_extended(ALLEEG(current_subject_index), 0, ICs{current_subject_index, 2}(current_IC_index, 1), NaN, {'freqrange', [1 60]});
+        if ~isempty(ICs{current_subject_index, 2})
+            pop_prop_extended(ALLEEG(current_subject_index), 0, ICs{current_subject_index, 2}(current_IC_index, 1), NaN, {'freqrange', [1 60]});
+        end
     end
 
     function skipCallback(~, ~)
-        % Do nothing, simply close the current plot
-        fig_handles = findall(0, 'Type', 'figure');
-        if length(fig_handles) > 1
-            close(fig_handles(2));
+        if ~isempty(ICs{current_subject_index, 2})
+            % Do nothing, simply close the current plot
+            fig_handles = findall(0, 'Type', 'figure');
+            if length(fig_handles) > 1
+                close(fig_handles(2));
+            end
         end
     end
 
     function rejectCallback(~, ~)
-        current_subject = subject_list(current_subject_index);
-        ic_id = ICs{current_subject_index, 2}(current_IC_index, 1);
-        rejected_ICs{current_subject_index} = [rejected_ICs{current_subject_index}; ic_id];
-        updateRejectedText();
-        % Ensure the subject directory exists before saving
-        subject_dir = fullfile(pwd, ['sub-' num2str(current_subject)]);
-        if ~exist(subject_dir, 'dir')
-            mkdir(subject_dir);
-        end
-        fig_handles = findall(0, 'Type', 'figure');
-        if length(fig_handles) > 1
-            saveas(fig_handles(2), fullfile(subject_dir, ['rejected_subject_' num2str(current_subject) '_IC_' num2str(ic_id) '.png']));
-            close(fig_handles(2));
+        if ~isempty(ICs{current_subject_index, 2})
+            current_subject = subject_list(current_subject_index);
+            ic_id = ICs{current_subject_index, 2}(current_IC_index, 1);
+            rejected_ICs{current_subject_index} = [rejected_ICs{current_subject_index}; ic_id];
+            updateRejectedText();
+            % Ensure the subject directory exists before saving
+            subject_dir = fullfile(pwd, ['sub-' num2str(current_subject)]);
+            if ~exist(subject_dir, 'dir')
+                mkdir(subject_dir);
+            end
+            fig_handles = findall(0, 'Type', 'figure');
+            if length(fig_handles) > 1
+                saveas(fig_handles(2), fullfile(subject_dir, ['rejected_subject_' num2str(current_subject) '_IC_' num2str(ic_id) '.png']));
+                close(fig_handles(2));
+            end
         end
     end
 
     function acceptCallback(~, ~)
-        current_subject = subject_list(current_subject_index);
-        ic_id = ICs{current_subject_index, 2}(current_IC_index, 1);
-        accepted_ICs{current_subject_index} = [accepted_ICs{current_subject_index}; ic_id];
-        ICs{current_subject_index, 3} = accepted_ICs{current_subject_index}; % Store accepted ICs in the third column of ICs
-        updateAcceptedText();
-        % Ensure the subject directory exists before saving
-        subject_dir = fullfile(pwd, ['sub-' num2str(current_subject)]);
-        if ~exist(subject_dir, 'dir')
-            mkdir(subject_dir);
-        end
-        fig_handles = findall(0, 'Type', 'figure');
-        if length(fig_handles) > 1
-            saveas(fig_handles(2), fullfile(subject_dir, ['accepted_subject_' num2str(current_subject) '_IC_' num2str(ic_id) '.png']));
-            close(fig_handles(2));
+        if ~isempty(ICs{current_subject_index, 2})
+            current_subject = subject_list(current_subject_index);
+            ic_id = ICs{current_subject_index, 2}(current_IC_index, 1);
+            accepted_ICs{current_subject_index} = [accepted_ICs{current_subject_index}; ic_id];
+            ICs{current_subject_index, 3} = accepted_ICs{current_subject_index}; % Store accepted ICs in the third column of ICs
+            updateAcceptedText();
+            % Ensure the subject directory exists before saving
+            subject_dir = fullfile(pwd, ['sub-' num2str(current_subject)]);
+            if ~exist(subject_dir, 'dir')
+                mkdir(subject_dir);
+            end
+            fig_handles = findall(0, 'Type', 'figure');
+            if length(fig_handles) > 1
+                saveas(fig_handles(2), fullfile(subject_dir, ['accepted_subject_' num2str(current_subject) '_IC_' num2str(ic_id) '.png']));
+                close(fig_handles(2));
+            end
         end
     end
 
@@ -134,7 +142,11 @@ function ic_selection_gui(ALLEEG, ICs, subject_list)
 
     % Helper Functions
     function updateICLabel()
-        set(ic_label, 'String', num2str(ICs{current_subject_index, 2}(current_IC_index, 1)));
+        if ~isempty(ICs{current_subject_index, 2})
+            set(ic_label, 'String', num2str(ICs{current_subject_index, 2}(current_IC_index, 1)));
+        else
+            set(ic_label, 'String', 'No potential Brain source to investigate!');
+        end
     end
 
     function updateRejectedText()

@@ -39,4 +39,8 @@ codegen/
 # Octave session info
 octave-workspace
 
-# End of https://www.toptal.com/developers/gitignore/api/matlab
+# End of https://www.toptal.com/developers/gitignore/api/matlab*.mat
+*.set
+*.fdt
+*.xdf
+~$*

@@ -2,16 +2,16 @@ clc
 clear
 
 %% Add and Define Necessary Paths
-addpath(genpath('C:\Morteza\MyProjects\ANSYMB2024')); % main folder containing all codes and data
-addpath(genpath('C:\Morteza\LSL\xdf-Matlab-master')); % required for loading the XDF files.
+addpath(genpath('D:\Morteza\MyProjects\ANSYMB2024')); % main folder containing all codes and data
+addpath(genpath('D:\Morteza\LSL\xdf-Matlab-master')); % required for loading the XDF files.
 
 % Change path to the directory on your PC which raw XDF files are stored:
-data_path = 'C:\Morteza\MyProjects\ANSYMB2024\data\';
+data_path = 'D:\Morteza\MyProjects\ANSYMB2024\data\';
 rawdata_path = [data_path, '0_source_data\'];
 
 
 %% All signals from all sessions concatenated (it takes time!)
-subject_id = 17;
+subject_id = 9;
 output = runs_concatenated(subject_id, rawdata_path);
 
 
@@ -41,7 +41,7 @@ filepath = [data_path, '6_0_Trials_Info_and_Events', filesep, 'sub-', ...
 filename = ['sub-', num2str(subject_id),'_Trials_encoder_events.mat'];
 load(fullfile(filepath, filename))
 
-sessions_trial_id = [42, 78, 114, 150];  % subject 18
+sessions_trial_id = [10, 20, 30, 40];  % Doesn't matter!
 
 Trials_Info = Main_event_selection(output, ...
                                    EEG, ...
@@ -53,7 +53,7 @@ Trials_Info = Main_event_selection(output, ...
 
 %% EMG sensors id 
 % sensors which were used for measuring muscles activity (Delsys System)
-EMG_sensor_id = [2, 3, 4, 5, 8, 9];
+EMG_sensor_id = [2, 3, 4, 5, 6, 7];
 
 
 %% Split dataset based on events

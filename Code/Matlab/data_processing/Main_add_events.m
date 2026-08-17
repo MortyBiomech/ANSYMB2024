@@ -1,5 +1,16 @@
 function [EEG, removeindices] = Main_add_events(EEG, output, ...
-    subject, subject_id, processing_path, input_filepath, bemobil_config)    
+    subject_id, processing_path, study_path)    
+
+% old version changed at 01/04/2026:
+% [EEG, removeindices] = Main_add_events(EEG, output, ...
+%     subject, subject_id, processing_path, input_filepath, bemobil_config, study_path)    
+
+
+    if subject_id > 9
+        idx = 2;
+    else
+        idx = 1;
+    end
     
     All_Experiment = output.All_Exp;
     All_Experiment_time = output.All_Exp_time;
@@ -8,51 +19,98 @@ function [EEG, removeindices] = Main_add_events(EEG, output, ...
     %% Define and Add events
     % Compute latency values
     
-    % start_beep event (first single beep)
-    start_beep = find(diff(All_Experiment(6, :)) == 1);
-    start_beep = reshape(start_beep, 2, []);
-    start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
-    start_beep_indx_EEG = ...
-        knnsearch(All_EEG_time', start_beep_time_Expdata');
-    start_beep_latency_EEG = EEG.times(start_beep_indx_EEG); % time unit: milisecond
+    if subject_id > 9
+        % start_beep event (first single beep)
+        start_beep = find(diff(All_Experiment(6, :)) == 1);
+        start_beep = reshape(start_beep, 2, []);
+        start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
+        start_beep_indx_EEG = ...
+            knnsearch(All_EEG_time', start_beep_time_Expdata');
+        start_beep_latency_EEG = EEG.times(start_beep_indx_EEG); % time unit: milisecond
+    else
+        % start_beep event (first single beep)
+        start_beep = find(diff(All_Experiment(6, :)) == 1);
+        start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
+        start_beep_indx_EEG = ...
+            knnsearch(All_EEG_time', start_beep_time_Expdata');
+        start_beep_latency_EEG = EEG.times(start_beep_indx_EEG); % time unit: milisecond
+    end
     
 
-    % pressure_change event (2s after first single beep)
-    pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
-    pressure_change_indx_EEG = ...
-        knnsearch(All_EEG_time', pressure_change_time_Expdata');
-    pressure_change_latency_EEG = EEG.times(pressure_change_indx_EEG); % time unit: milisecond
+    if subject_id > 9
+        % pressure_change event (2s after first single beep)
+        pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
+        pressure_change_indx_EEG = ...
+            knnsearch(All_EEG_time', pressure_change_time_Expdata');
+        pressure_change_latency_EEG = EEG.times(pressure_change_indx_EEG); % time unit: milisecond
+    else
+        % pressure_change event (2s before single beep)
+        pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) - 2;
+        pressure_change_indx_EEG = ...
+            knnsearch(All_EEG_time', pressure_change_time_Expdata');
+        pressure_change_latency_EEG = EEG.times(pressure_change_indx_EEG); % time unit: milisecond
+    end
 
 
-    % start_move event (second single beep, 2s after pressure change)
-    start_move = find(diff(All_Experiment(6, :)) == 1);
-    start_move = reshape(start_move, 2, []);
-    start_move_time_Expdata = All_Experiment_time(start_move(2,:));
-    start_move_indx_EEG = ...
-        knnsearch(All_EEG_time', start_move_time_Expdata');
-    start_move_latency_EEG = EEG.times(start_move_indx_EEG); % time unit: milisecond
+    if subject_id > 9
+        % start_move event (second single beep, 2s after pressure change)
+        start_move = find(diff(All_Experiment(6, :)) == 1);
+        start_move = reshape(start_move, 2, []);
+        start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+        start_move_indx_EEG = ...
+            knnsearch(All_EEG_time', start_move_time_Expdata');
+        start_move_latency_EEG = EEG.times(start_move_indx_EEG); % time unit: milisecond
+    else
+        % start_move event (second single beep, 2s after pressure change)
+        start_move = find(diff(All_Experiment(6, :)) == 1);
+        start_move_time_Expdata = All_Experiment_time(start_move(1,:));
+        start_move_indx_EEG = ...
+            knnsearch(All_EEG_time', start_move_time_Expdata');
+        start_move_latency_EEG = EEG.times(start_move_indx_EEG); % time unit: milisecond
+    end
     
 
-    % finish_beep event (20s after start_move event, double beep to stop movement)
-    finish_beep = find(diff(All_Experiment(6, :)) == -2);
-    finish_beep_time_Expdata = All_Experiment_time(finish_beep);
-    finish_beep_indx_EEG = ...
-        knnsearch(All_EEG_time', finish_beep_time_Expdata');
-    finish_beep_latency_EEG = EEG.times(finish_beep_indx_EEG); % time unit: milisecond
+    if subject_id > 9
+        % finish_beep event (20s after start_move event, double beep to stop movement)
+        finish_beep = find(diff(All_Experiment(6, :)) == -2);
+        finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+        finish_beep_indx_EEG = ...
+            knnsearch(All_EEG_time', finish_beep_time_Expdata');
+        finish_beep_latency_EEG = EEG.times(finish_beep_indx_EEG); % time unit: milisecond
+    else
+        % finish_beep event (20s after start_move event, double beep to stop movement)
+        finish_beep = find(diff(All_Experiment(6, :)) == -1);
+        finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+        finish_beep_indx_EEG = ...
+            knnsearch(All_EEG_time', finish_beep_time_Expdata');
+        finish_beep_latency_EEG = EEG.times(finish_beep_indx_EEG); % time unit: milisecond
+    end
     
 
-    % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
-    score_press = find(diff(All_Experiment(7, :)) > 0);
-    score_press_time_Expdata = All_Experiment_time(score_press);
-    score_press_indx_EEG = ...
-        knnsearch(All_EEG_time', score_press_time_Expdata');
-    score_press_latency_EEG = EEG.times(score_press_indx_EEG); % time unit: milisecond
+    if subject_id > 9
+        % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
+        score_press = find(diff(All_Experiment(7, :)) > 0);
+        score_press_time_Expdata = All_Experiment_time(score_press);
+        score_press_indx_EEG = ...
+            knnsearch(All_EEG_time', score_press_time_Expdata');
+        score_press_latency_EEG = EEG.times(score_press_indx_EEG); % time unit: milisecond
+    else
+        score_press = find(diff(All_Experiment(6, :)) == -1) + 1;
+        score_press_time_Expdata = All_Experiment_time(score_press);
+        score_press_indx_EEG = ...
+            knnsearch(All_EEG_time', score_press_time_Expdata');
+        score_press_latency_EEG = EEG.times(score_press_indx_EEG) + 2; % time unit: milisecond
+    end
 
     
     %% Define and Add Events
     if subject_id == 13
         no_PAM_trials = [1:3, 40:42, 43:45, 76:78, 79:81, 112:114, 115:117, 148:150];
         familiarization_trials = 4:9;
+    end
+    if subject_id < 10
+        no_PAM_trials = [];
+        familiarization_trials = [];
     end
     % Import Trials information
     Trials = cell(1, size(start_beep,2));
@@ -64,9 +122,9 @@ function [EEG, removeindices] = Main_add_events(EEG, output, ...
         else
             Trials{1, i}.Description = 'Experiment';
         end
-        Trials{1, i}.Pressure = All_Experiment(3, start_beep(2, i));
+        Trials{1, i}.Pressure = All_Experiment(3, start_beep(idx, i));
         if i ~= numel(Trials)
-            Trials{1, i}.Score = All_Experiment(4, start_beep(1, i+1));
+            Trials{1, i}.Score = All_Experiment(4, start_beep(idx, i+1));
         else
             Trials{1, i}.Score = All_Experiment(4, end);
         end
@@ -121,10 +179,17 @@ function [EEG, removeindices] = Main_add_events(EEG, output, ...
     latency = cat(2, latency, score_press_latency_EEG);
     desc = cat(2, desc, desc2);
 
-    % Add Trial Start events
-    type = cat(2, type, repmat({'TS_Trial_Start'}, 1, numel(start_beep_latency_EEG)));
-    latency = cat(2, latency, start_beep_latency_EEG - 2); % 2ms before (one sample)
-    desc = cat(2, desc, desc1);
+    if subject_id > 9
+        % Add Trial Start events
+        type = cat(2, type, repmat({'TS_Trial_Start'}, 1, numel(start_beep_latency_EEG)));
+        latency = cat(2, latency, start_beep_latency_EEG - 2); % 2ms before (one sample)
+        desc = cat(2, desc, desc1);
+    else
+        % Add Trial Start events
+        type = cat(2, type, repmat({'TS_Trial_Start'}, 1, numel(pressure_change_latency_EEG)));
+        latency = cat(2, latency, pressure_change_latency_EEG - 2); % 2ms before (one sample)
+        desc = cat(2, desc, desc1);
+    end
 
     % Add Trial End events
     type = cat(2, type, repmat({'TE_Trial_End'}, 1, numel(score_press_latency_EEG)));
@@ -192,51 +257,65 @@ function [EEG, removeindices] = Main_add_events(EEG, output, ...
     % detection and AMICA
     removeindices = zeros(size(start_beep,2)+1 ,2);
     % remove from start to first event
-    removeindices(1, :) = [0 EEG.event(1).latency]; 
+    removeindices(1, :) = [0 EEG.event(1).latency-1]; 
 
     % add more removeIndices here for pauses or itnerruptions of the 
     % experiment if they have markers or you know their indices in the data
-    for i = 1:size(start_beep,2)-1
-        removeindices(i+1, :) = [EEG.event(7*i).latency EEG.event(7*i+1).latency];
+
+    start_beep_EEGLABevent = find(strcmp({EEG.event.type}, 'SB_Start_Beep'));
+    for i = 1:size(start_beep_EEGLABevent,2)-1
+        removeindices(i+1, :) = [EEG.event(7*i).latency+1 EEG.event(7*i+1).latency-1]; % this should be changed based on the subject
     end
-    removeindices(end, :) = [EEG.event(end).latency EEG.pnts]; % remove from last event to the end
+    removeindices(end, :) = [EEG.event(end).latency+1 EEG.pnts]; % remove from last event to the end
+    
     
 
     %%
-    % filter for plot
-    EEG_plot = pop_eegfiltnew(EEG, 'locutoff',0.5, 'hicutoff', 40,'plotfreqz',0);
-    
-    % plot
-    fig1 = figure; set(gcf,'Color','w','InvertHardCopy','off', 'units','normalized','outerposition',[0 0 1 1])
-    plot(normalize(EEG_plot.data') + [1:10:10*EEG_plot.nbchan], 'color', [78 165 216]/255)
-    yticks([])
-    
-    xlim([0 EEG.pnts])
-    ylim([-10 10*EEG_plot.nbchan+10])
-    
-    hold on
-    
-    % plot lines for valid times
-    
-    for i = 1:size(removeindices,1)
-        plot([removeindices(i,1) removeindices(i,1)],ylim,'k', 'LineStyle','-')
-        plot([removeindices(i,2) removeindices(i,2)],ylim,'k', 'LineStyle','--')
-    end
-    title(['Subject ', num2str(subject), ', Non-Exp Segments: From Solid Line to Next Dashed Line on the Right'])
-    
-    % save plot
-    print(gcf,fullfile(input_filepath,[bemobil_config.filename_prefix num2str(subject) '_raw-full_EEG.png']),'-dpng')
-    close
+    % % filter for plot
+    % EEG_plot = pop_eegfiltnew(EEG, 'locutoff',0.5, 'hicutoff', 40,'plotfreqz',0);
+    % 
+    % % plot
+    % fig1 = figure; set(gcf,'Color','w','InvertHardCopy','off', 'units','normalized','outerposition',[0 0 1 1])
+    % plot(normalize(EEG_plot.data') + [1:10:10*EEG_plot.nbchan], 'color', [78 165 216]/255)
+    % yticks([])
+    % 
+    % xlim([0 EEG.pnts])
+    % ylim([-10 10*EEG_plot.nbchan+10])
+    % 
+    % hold on
+    % 
+    % % plot lines for valid times
+    % 
+    % for i = 1:size(removeindices,1)
+    %     plot([removeindices(i,1) removeindices(i,1)],ylim,'k', 'LineStyle','-')
+    %     plot([removeindices(i,2) removeindices(i,2)],ylim,'k', 'LineStyle','--')
+    % end
+    % title(['Subject ', num2str(subject), ', Non-Exp Segments: From Solid Line to Next Dashed Line on the Right'])
+    % 
+    % % save plot
+    % print(gcf,fullfile(input_filepath,[bemobil_config.filename_prefix num2str(subject) '_raw-full_EEG.png']),'-dpng')
+    % close
+
+
+
 
     %% Add other flexion/extension start/end events
     % Important Note: before rejecting the non-exp segments you must add
     % the flexion/Extension start events
 
+    % Note on 01/04/2026
+    % For any new subject we need to make Trials_encoder_events structure.
+    % But we should not run all the code again on the processed subjects. 
+
     % Use peak selection app to find the flexion and extension start events
-    output_peaks = find_peaks_and_select_events(output);
+    output_peaks = find_peaks_and_select_events(output, subject_id);
 
     start_beep = start_beep(1, :);
-    start_move = start_move(2, :);
+    if subject_id > 9
+        start_move = start_move(2, :); %#ok<NASGU>
+    else
+        start_move = start_beep; %#ok<NASGU>
+    end
     XLimits = output_peaks.XLimits;
 
     trial_pks_high_peaks = output_peaks.trial_pks_high_peaks;
@@ -257,7 +336,16 @@ function [EEG, removeindices] = Main_add_events(EEG, output, ...
 
 
     %% run the app to select unwanted peaks 
+
     app = find_flexion_extension_events;
+    app.initializeApp(subject_id, All_Experiment_time, ...
+                      All_Experiment, start_beep, ...
+                      pressure_change_time_Expdata, start_move, ...
+                      finish_beep, score_press_time_Expdata, ...
+                      XLimits, trial_pks_high_peaks, trial_locs_high_peaks, ...
+                      trial_pks_low_peaks, trial_locs_low_peaks, ...
+                      Trials_encoder_events);
+
 
     % Wait for the app to close
     waitfor(app.UIFigure);
@@ -265,6 +353,7 @@ function [EEG, removeindices] = Main_add_events(EEG, output, ...
     Trials_encoder_events = load([study_path, '6_0_Trials_Info_and_Events\sub-', ...
         num2str(subject_id), filesep, 'sub-', num2str(subject_id), ...
         '_Trials_encoder_events.mat']);
+    Trials_encoder_events = Trials_encoder_events.Trials_encoder_events;
 
 
     %% Add flexion and extension indexes to Trials_encoder_events structure (based on Exp stream indexes)

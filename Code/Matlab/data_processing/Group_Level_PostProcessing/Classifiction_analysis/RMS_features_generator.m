@@ -1,5 +1,5 @@
 function [RMS_nonNorm, RMS_Norm] = ...
-    RMS_features_generator(condition_indices, data, IC, frequencies, per_trial_or_all_epochs)
+    RMS_features_generator(condition_indices, data, IC, frequencies, per_trial_or_all_epochs, pressure_score)
 
     RMS_nonNorm = struct();
     RMS_Norm = struct();
@@ -17,8 +17,13 @@ function [RMS_nonNorm, RMS_Norm] = ...
         freq_bands_indx(i, 2) = find(frequencies < freq_bands(i, 2), 1, 'last');
     end
 
+    if strcmp(pressure_score, 'pressure')
+        X = {'P1', 'P3', 'P6'}; % three pressure conditions
+    elseif strcmp(pressure_score, 'score')
+        X = {'S1', 'S2', 'S3'}; % three score clusters
+    end
     
-    for Pn = {'P1', 'P3', 'P6'}
+    for Pn = X
         
         P = Pn{1, 1};
         RMS_nonNorm.(P) = [];

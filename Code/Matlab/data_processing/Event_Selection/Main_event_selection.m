@@ -15,42 +15,125 @@ function Trials_Info = Main_event_selection(input_streams, ...
     
     %% Extract events on Experiment streams & All_EEG stream (raw EEG data)
 
-    % start_beep event (first single beep)
-    start_beep = find(diff(All_Experiment(6, :)) == 1);
-    start_beep = reshape(start_beep, 2, []);
-    start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
-    start_beep_indx_All_EEG = ...
-        interp1(All_EEG_time, 1:length(All_EEG_time), start_beep_time_Expdata', 'nearest', 'extrap');
-        % knnsearch(All_EEG_time', start_beep_time_Expdata');
+    if subject_id > 9
+        idx = 2;
+    else
+        idx = 1;
+    end
 
-
-
-    % pressure_change event (2s after first single beep)
-    pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
-    pressure_change_indx_All_EEG = ...
-        knnsearch(All_EEG_time', pressure_change_time_Expdata');
-
-
-    % start_move event (second single beep, 2s after pressure change)
-    start_move = find(diff(All_Experiment(6, :)) == 1);
-    start_move = reshape(start_move, 2, []);
-    start_move_time_Expdata = All_Experiment_time(start_move(2,:));
-    start_move_indx_All_EEG = ...
-        knnsearch(All_EEG_time', start_move_time_Expdata');
+    if subject_id > 9
+        % start_beep event (first single beep)
+        start_beep = find(diff(All_Experiment(6, :)) == 1);
+        start_beep = reshape(start_beep, 2, []);
+        start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
+        start_beep_indx_All_EEG = ...
+            knnsearch(All_EEG_time', start_beep_time_Expdata');
+    else
+        % start_beep event (first single beep)
+        start_beep = find(diff(All_Experiment(6, :)) == 1);
+        start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
+        start_beep_indx_All_EEG = ...
+            knnsearch(All_EEG_time', start_beep_time_Expdata');
+    end
     
 
-    % finish_beep event (20s after start_move event, double beep to stop movement)
-    finish_beep = find(diff(All_Experiment(6, :)) == -2);
-    finish_beep_time_Expdata = All_Experiment_time(finish_beep);
-    finish_beep_indx_All_EEG = ...
-        knnsearch(All_EEG_time', finish_beep_time_Expdata');
+    % % start_beep event (first single beep)
+    % start_beep = find(diff(All_Experiment(6, :)) == 1);
+    % start_beep = reshape(start_beep, 2, []);
+    % start_beep_time_Expdata = All_Experiment_time(start_beep(1,:));
+    % start_beep_indx_All_EEG = ...
+    %     interp1(All_EEG_time, 1:length(All_EEG_time), start_beep_time_Expdata', 'nearest', 'extrap');
+    %     % knnsearch(All_EEG_time', start_beep_time_Expdata');
+
+
+
+
+    if subject_id > 9
+        % pressure_change event (2s after first single beep)
+        pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
+        pressure_change_indx_All_EEG = ...
+            knnsearch(All_EEG_time', pressure_change_time_Expdata');
+    else
+        % pressure_change event (2s before single beep)
+        pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) - 2;
+        pressure_change_indx_All_EEG = ...
+            knnsearch(All_EEG_time', pressure_change_time_Expdata');
+    end
+
+    % % pressure_change event (2s after first single beep)
+    % pressure_change_time_Expdata = All_Experiment_time(start_beep(1,:)) + 2;
+    % pressure_change_indx_All_EEG = ...
+    %     knnsearch(All_EEG_time', pressure_change_time_Expdata');
+
+
+
+
+    if subject_id > 9
+        % start_move event (second single beep, 2s after pressure change)
+        start_move = find(diff(All_Experiment(6, :)) == 1);
+        start_move = reshape(start_move, 2, []);
+        start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+        start_move_indx_All_EEG = ...
+            knnsearch(All_EEG_time', start_move_time_Expdata');
+    else
+        % start_move event (second single beep, 2s after pressure change)
+        start_move = find(diff(All_Experiment(6, :)) == 1);
+        start_move_time_Expdata = All_Experiment_time(start_move(1,:));
+        start_move_indx_All_EEG = ...
+            knnsearch(All_EEG_time', start_move_time_Expdata');
+    end
+
+    % % start_move event (second single beep, 2s after pressure change)
+    % start_move = find(diff(All_Experiment(6, :)) == 1);
+    % start_move = reshape(start_move, 2, []);
+    % start_move_time_Expdata = All_Experiment_time(start_move(2,:));
+    % start_move_indx_All_EEG = ...
+    %     knnsearch(All_EEG_time', start_move_time_Expdata');
     
 
-    % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
-    score_press = find(diff(All_Experiment(7, :)) > 0);
-    score_press_time_Expdata = All_Experiment_time(score_press);
-    score_press_indx_All_EEG = ...
-        knnsearch(All_EEG_time', score_press_time_Expdata');
+
+
+    if subject_id > 9
+        % finish_beep event (20s after start_move event, double beep to stop movement)
+        finish_beep = find(diff(All_Experiment(6, :)) == -2);
+        finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+        finish_beep_indx_All_EEG = ...
+            knnsearch(All_EEG_time', finish_beep_time_Expdata');
+    else
+        % finish_beep event (20s after start_move event, double beep to stop movement)
+        finish_beep = find(diff(All_Experiment(6, :)) == -1);
+        finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+        finish_beep_indx_All_EEG = ...
+            knnsearch(All_EEG_time', finish_beep_time_Expdata');
+    end
+
+    % % finish_beep event (20s after start_move event, double beep to stop movement)
+    % finish_beep = find(diff(All_Experiment(6, :)) == -2);
+    % finish_beep_time_Expdata = All_Experiment_time(finish_beep);
+    % finish_beep_indx_All_EEG = ...
+    %     knnsearch(All_EEG_time', finish_beep_time_Expdata');
+    
+
+
+
+    if subject_id > 9
+        % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
+        score_press = find(diff(All_Experiment(7, :)) > 0);
+        score_press_time_Expdata = All_Experiment_time(score_press);
+        score_press_indx_All_EEG = ...
+            knnsearch(All_EEG_time', score_press_time_Expdata');
+    else
+        score_press = find(diff(All_Experiment(6, :)) == -1) + 1;
+        score_press_time_Expdata = All_Experiment_time(score_press);
+        score_press_indx_All_EEG = ...
+            knnsearch(All_EEG_time', score_press_time_Expdata');
+    end
+
+    % % score_press event (experimenter presses the scores immidiately after subjects evaluate the task)
+    % score_press = find(diff(All_Experiment(7, :)) > 0);
+    % score_press_time_Expdata = All_Experiment_time(score_press);
+    % score_press_indx_All_EEG = ...
+    %     knnsearch(All_EEG_time', score_press_time_Expdata');
 
 
     
@@ -188,7 +271,7 @@ function Trials_Info = Main_event_selection(input_streams, ...
 
         % Movement start & end
         [~, Trials_Info{1, i}.Events.EMG_stream.Movement_start_indx] = ...
-            min(abs(All_EMG_time - All_Experiment_time(start_move(2, i))));
+            min(abs(All_EMG_time - All_Experiment_time(start_move(idx, i))));
         [~, Trials_Info{1, i}.Events.EMG_stream.Movement_end_indx] = ...
             min(abs(All_EMG_time - All_Experiment_time(finish_beep(1, i))));
 
@@ -241,7 +324,7 @@ function Trials_Info = Main_event_selection(input_streams, ...
 
         % Movement start & end
         Trials_Info{1, i}.Events.EXP_stream.Movement_start_indx = ...
-            start_move(2, i);
+            start_move(idx, i);
         Trials_Info{1, i}.Events.EXP_stream.Movement_end_indx = ...
             finish_beep(1, i);
 
