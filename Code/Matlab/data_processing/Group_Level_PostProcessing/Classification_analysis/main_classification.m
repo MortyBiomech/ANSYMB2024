@@ -1,4 +1,4 @@
-clc
+﻿clc
 clear
 
 
@@ -13,7 +13,7 @@ study_folder = [data_path, '7_STUDY'];
 epoched_data_path = [data_path, '6_Trials_Info_and_Epoched_data\'];
 subjects_classification_results_path = [main_project_folder, ...
     '\Code\Matlab\data_processing\Group_Level_PostProcessing\', ...
-    'Classifiction_analysis\subjects_classification_results\'];
+    'Classification_analysis\subjects_classification_results\'];
 EMG_features_path = [main_project_folder, ...
     '\Code\Matlab\data_processing\EMG_processing\structured_EMG_data'];
 

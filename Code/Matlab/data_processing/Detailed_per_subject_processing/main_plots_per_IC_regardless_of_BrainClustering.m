@@ -1,4 +1,4 @@
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+﻿%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%  Regardless of Brain Region Clustering  %%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -29,7 +29,7 @@ cleaned_EEG_data_path = [data_path, '5_single-subject-EEG-analysis\'];
 % ROIs features containing PSD integrals (power) was created before. 
 % Look at this path: 
 % C:\Morteza\MyProjects\ANSYMB2024\Code\Matlab\data_processing\
-%    Group_Level_PostProcessing\Classifiction_analysis\
+%    Group_Level_PostProcessing\Classification_analysis\
 %    regardless_of_GroupLevel_clustering
 % This file -> main_classification_regardless_of_clustering_ROIs_creation.m
 

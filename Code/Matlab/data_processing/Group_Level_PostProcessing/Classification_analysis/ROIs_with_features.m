@@ -1,4 +1,4 @@
-function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_list, ...
+﻿function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_list, ...
     epoch_type, features_from_epochs, data_path, main_project_folder, per_trial_or_all_epochs)
 
     ROIs = struct();
@@ -38,7 +38,7 @@ function ROIs = ROIs_with_features(all_STUDY_names, all_STUDY_files, subject_lis
         Trials_Info = Trials_Info.(baseName);
 
         cd(fullfile(main_project_folder, 'Code\Matlab\data_processing\', ...
-            'Group_Level_PostProcessing\Classifiction_analysis'))
+            'Group_Level_PostProcessing\Classification_analysis'))
     
 
         % Find all conditions indices in trials 

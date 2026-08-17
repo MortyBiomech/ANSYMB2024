@@ -1,4 +1,4 @@
-clc
+﻿clc
 clear
 
 %% Add and Define Necessary Paths
@@ -8,7 +8,7 @@ addpath(genpath(main_project_folder)); % main folder containing all codes and da
 data_path = 'C:\Morteza\MyProjects\ANSYMB2024\data\';
 subjects_classification_results_path = [main_project_folder, ...
     '\Code\Matlab\data_processing\Group_Level_PostProcessing\', ...
-    'Classifiction_analysis\subjects_classification_results\'];
+    'Classification_analysis\subjects_classification_results\'];
 
 
 %% Read the accuracy values from EEG, EMG, and EEG+EMG cases
